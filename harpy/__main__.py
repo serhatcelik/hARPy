@@ -23,6 +23,10 @@ def ctrl_c_handler(signum, _frame):
     sys.exit(f"\n\nharpy: info: received signal {signum}, exiting\n")
 
 
+def ctrl_z_handler(signum, _frame):
+    ctrl_c_handler(signum=signum, _frame=_frame)
+
+
 def uncaught_exception_handler(*args):
     print("\nharpy: fatal: unexpected error, sending signal 2\n")
     traceback.print_exception(*args)
@@ -31,6 +35,8 @@ def uncaught_exception_handler(*args):
 
 def main():
     signal.signal(signal.SIGINT, ctrl_c_handler)  # Capture signal 2 (SIGINT)
+    signal.signal(signal.SIGTSTP, ctrl_z_handler)  # Capture signal 20
+
     sys.excepthook = uncaught_exception_handler  # Customize the exception hook
 
     parser = ParserHandler.add_arguments()
