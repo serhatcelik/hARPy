@@ -1,3 +1,9 @@
+# hARPy v2020.9.25
+
+- The error that occurred when encountering signal 20 has been fixed.
+
+---
+
 # hARPy v2020.9.17
 
 - First version.
