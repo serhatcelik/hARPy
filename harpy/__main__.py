@@ -150,6 +150,10 @@ def main():
         SignalHandler(*data.SIGNALS).disable_handler()
 
 
-if __name__ == '__main__':
+def multi_main():
     main()
     terminator()
+
+
+if __name__ == '__main__':
+    multi_main()
