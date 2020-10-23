@@ -34,7 +34,7 @@ setuptools.setup(
     },
     entry_points={
         'console_scripts': [
-            'harpy = harpy.__main__:main'
+            'harpy = harpy.__main__:multi_main'
         ]
     },
     options={
