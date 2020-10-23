@@ -1,3 +1,7 @@
 # This file is part of hARPy
+# Released under the MIT license
+# Copyright (c) Serhat Çelik
 
-__version__ = "2020.9.25"
+"""Program version."""
+
+__version__ = '2020.10.23'
