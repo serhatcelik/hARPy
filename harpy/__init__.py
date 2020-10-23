@@ -1,24 +1,34 @@
 # This file is part of hARPy
+# Released under the MIT license
+# Copyright (c) Serhat Çelik
+
+"""hARPy: Active/passive ARP discovery tool."""
 
 import sys
 import threading
 
 
-def workaround_for_sys_excepthook_thread_bug():
+def install_thread_excepthook():
+    """
+    Workaround for sys.excepthook thread bug.
+    ( https://bugs.python.org/issue1230540 )
+    """
+
     init_original = threading.Thread.__init__
 
     def init(self, *args, **kwargs):
         init_original(self, *args, **kwargs)
         run_original = self.run
 
-        def run_with_except_hook(*args2, **kwargs2):
+        def run(*args2, **kwargs2):
             try:
                 run_original(*args2, **kwargs2)
-            except Exception:
+            except Exception:  # pylint: disable=W0703
                 sys.excepthook(*sys.exc_info())
 
-        self.run = run_with_except_hook
+        self.run = run
+
     threading.Thread.__init__ = init
 
 
-workaround_for_sys_excepthook_thread_bug()
+install_thread_excepthook()
