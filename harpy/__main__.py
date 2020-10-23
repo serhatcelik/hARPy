@@ -101,8 +101,13 @@ def main():
         sys.exit(parser.description)
     elif data.COMMANDS.l:
         if os.path.isfile(data.LOGS_FILE):
-            sys.exit(os.system(f'cat {data.LOGS_FILE}'))
+            with open(data.LOGS_FILE, 'r') as logs:
+                sys.exit(logs.read())
         sys.exit('no logs')
+    elif data.COMMANDS.r is None:
+        parser.print_usage()
+        sys.exit('harpy: error: the following arguments are required: -r')
+
     if False in ParserHandler.check_arguments(data.COMMANDS):
         sys.exit(1)
 
@@ -151,6 +156,8 @@ def main():
 
 
 def multi_main():
+    """Main function for setup script."""
+
     main()
     terminator()
 
