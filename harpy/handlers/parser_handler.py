@@ -71,7 +71,7 @@ class ParserHandler:
         )
         group.add_argument(
             '-r',
-            required=True,
+            default=None,
             help='scan range, e.g. 192.168.2.1/24 (valid: /8, /16, /24)',
             metavar='range',
             dest='r'
