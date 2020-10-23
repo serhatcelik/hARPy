@@ -1,3 +1,9 @@
+# hARPy v2020.10.23.post1
+
+- Minor bug fixes.
+
+---
+
 # hARPy v2020.10.23
 
 - Fixed an error that caused the program to crash on exit.
