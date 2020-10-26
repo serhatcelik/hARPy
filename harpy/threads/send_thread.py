@@ -2,7 +2,7 @@
 # Released under the MIT license
 # Copyright (c) Serhat Çelik
 
-"""Module for handling send thread."""
+"""Module for handling the send thread."""
 
 import time
 import socket
@@ -10,14 +10,15 @@ import struct
 import threading
 import harpy.core.data as data
 from harpy.handlers.packet_handler import PacketHandler
+from harpy.handlers.exception_handler import ExceptionHandler
 
 
 class SendThread(threading.Thread):
-    """Handler of send thread."""
+    """Handler of the send thread."""
 
     def __init__(self, raw_soc):
         super().__init__()
-        self.name = 'Thread-Send'
+        self.name = data.SEND
 
         self.raw_soc = raw_soc
 
@@ -27,13 +28,10 @@ class SendThread(threading.Thread):
         self.slp = data.COMMANDS.s
         self.flag = threading.Event()
 
+    @ExceptionHandler(data.SEND)
     def run(self):
-        while not self.flag.is_set() and data.RUN_HARPY:
-            try:
-                self.send()
-            except OSError as err:
-                if data.oserror_handler(err=err, who=data.ERR_SEND) is None:
-                    raise
+        while not self.flag.is_set() and data.RUN_MAIN:
+            self.send()
 
     def send(self):
         """Send ARP packets."""
@@ -54,26 +52,31 @@ class SendThread(threading.Thread):
             if self.flag.is_set():
                 return
             tgt_ip = socket.inet_ntoa(struct.pack('!I', _))
-            data.SENDING_ADDRESS = tgt_ip
+            data.SEND_ADDRESS = tgt_ip
             new_count = self.cnt  # Restore the original value at every step
             while not self.flag.is_set() and new_count > 0:
+                # Gratuitous ARP?
                 if int(tgt_ip.split('.')[-1]) == self.nod:
-                    # Prevent sending gratuitous ARP request
                     snd_ip = '.'.join(tgt_ip.split('.')[0:3] + ['0'])
                 else:
                     snd_ip = '.'.join(tgt_ip.split('.')[0:3] + [str(self.nod)])
 
-                ethernet_frame = PacketHandler.create_eth_frame(data.ETH_SRC)
+                eth_frame = PacketHandler.create_eth_frame(data.ETH_SRC)
                 arp_header = PacketHandler.create_arp_header(
                     snd_mac=data.ARP_SND,
                     snd_ip=snd_ip,
                     tgt_ip=tgt_ip
                 )
 
-                self.raw_soc.send(ethernet_frame + arp_header)
+                try:
+                    self.raw_soc.send(eth_frame + arp_header)  # Send a packet
+                except BlockingIOError:
+                    data.SEND_PAUSED = True
+                    time.sleep(data.SLEEP_SEND)
+                else:
+                    data.SEND_PAUSED = False
+                    time.sleep(self.slp / 1000)
+                    new_count -= 1
 
-                time.sleep(self.slp / 1000)
-                new_count -= 1
-
-        data.SENDING_FINISHED = True
+        data.SEND_FINISHED = True
         self.flag.set()
