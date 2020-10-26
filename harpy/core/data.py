@@ -5,27 +5,34 @@
 """Global variables and functions for handling external modules."""
 
 import os
-import sys
+import time
 
-##############
-# CROSS-DATA #
-##############
+################
+# OVER CONTROL #
+################
+START_MAIN = time.time()
+RUN_MAIN = True
+TIMED_OUT = False
+SIGNAL_NUMBER = None
 COMMANDS = None  # Parsed command-line arguments
-RUN_HARPY = True
-ERRORS = set()  # Container to store errors as non-recurring
 THREADS = list()  # Container to store all threads
-TERMINATE_TIMEOUT = 5
+ERRORS = set()  # Container to store errors as non-recurring
+SLEEP_MAIN = 0.025  # Reduce window flickering
+SLEEP_TERMINATOR = 5.25  # Prevent looping indefinitely
+SLEEP_SEND = 0.75  # Reduce window flickering
+SLEEP_SNIFF = 0.025  # Reduce window flickering
 SNIFF_RESULT = list()  # Container to store a sniff result
 SNIFF_RESULTS = list()  # Container to store all sniff results
-SENDING_ADDRESS = None
-SENDING_FINISHED = False
+SEND_FINISHED = False
+SEND_PAUSED = False
+SEND_ADDRESS = None
 
 #############
 # LOCATIONS #
 #############
 SYS_PATH = '/sys/class/net/'
+LOG_FILE = '/var/log/user.log'
 VENDORS_FILE = os.path.join(os.path.dirname(__file__), 'vendors.json')
-LOGS_FILE = os.path.join(os.path.dirname(__file__), 'LOGS')
 
 ###########
 # SIGNALS #
@@ -40,24 +47,22 @@ SIGNALS = [
 # STYLES #
 ##########
 RESET = '\033[0m'  # Reset all attributes to their defaults
-FG_BLACK = '\033[30m'  # Black
-FG_RED = '\033[31m'  # Red
-FG_GREEN = '\033[32m'  # Green
-BG_YELLOW = '\033[43m'  # Yellow (Background)
+F_BLACK = '\033[30m'  # Black
+F_RED = '\033[31m'  # Red
+F_GREEN = '\033[32m'  # Green
+F_YELLOW = '\033[33m'  # Yellow
+F_BLUE = '\033[34m'  # Blue
+B_YELLOW = '\033[43m'  # Yellow (Background)
 
 #################
 # NOTIFICATIONS #
 #################
-FAIL = '[FAIL]'
-SUCCESS = '[SUCCESS]'
-ERR_COUNT = 'count: error:'
-ERR_INTERFACE = 'interface: error:'
-ERR_NODE = 'node: error:'
-ERR_RANGE = 'range: error:'
-ERR_SEND = 'send: error:'
-ERR_SLEEP = 'sleep: error:'
-ERR_SNIFF = 'sniff: error:'
-ERR_SOCKET = 'socket: error:'
+FAIL = '[' + F_RED + 'fail' + RESET + ']'
+SUCCESS = '[' + F_GREEN + 'done' + RESET + ']'
+HARPY = 'harpy'
+SEND = 'send'
+SNIFF = 'sniff'
+SOCKET = 'socket'
 
 ##########################
 # COMMAND-LINE ARGUMENTS #
@@ -65,9 +70,11 @@ ERR_SOCKET = 'socket: error:'
 DEF_CNT = 1  # Count default
 DEF_NOD = 43  # Node default
 DEF_SLP = 3  # Sleep default
-LIM_CNT = 0  # Count limit
+DEF_TIM = 1800  # Timeout default
+LIM_CNT = 1  # Count limit
 LIM_NOD = 2, 253  # Node limit
-LIM_SLP = 1  # Sleep limit
+LIM_SLP = 2, 1000  # Sleep limit
+LIM_TIM = 5  # Timeout limit
 
 #################
 # RESULT WINDOW #
@@ -104,32 +111,22 @@ ARP_PRT = '0800'  # Protocol type: IPv4
 ARP_HWS = '06'  # Hardware size: 6 bytes
 ARP_PRS = '04'  # Protocol size: 4 bytes
 ARP_REQ = '0001'  # Opcode: Request
+ARP_REP = '0002'  # Opcode: Reply
 ARP_SND = None  # Sender MAC address: Own MAC address
 ARP_TGT = 'ff' * 6  # Target MAC address: Broadcast
+
 
 #############
 # FUNCTIONS #
 #############
-
-
 def with_red(text):
     """
     Color the text with red.
 
-    :param text: Text to be colored with red.
+    :param text: Text to be colored.
     """
 
-    return FG_RED + text + RESET
-
-
-def with_green(text):
-    """
-    Color the text with green.
-
-    :param text: Text to be colored with green.
-    """
-
-    return FG_GREEN + text + RESET
+    return globals()['F_RED'] + text + globals()['RESET']
 
 
 def new_range(commands):
@@ -143,37 +140,23 @@ def new_range(commands):
         commands.r.split('.')[0],
         commands.r.split('.')[1],
         commands.r.split('.')[2],
-        commands.r.split('.')[3].split('/')[0],
-        commands.r.split('.')[3].split('/')[1]
+        commands.r.split('.')[-1].split('/')[0],
+        commands.r.split('.')[-1].split('/')[-1]
     ]
 
 
-def oserror_handler(err, who):
+def run_main(run=True):
     """
-    Handler of OSError.
+    Determine whether the program will continue to run.
 
-    :param err: Error to handle.
-    :param who: Responsible for the error.
+    :param run: Value to determine.
     """
 
-    # [Errno 1] Operation not permitted
-    if err.errno == 1:
-        sys.exit(with_red(f'{who} you are not root user'))
-    # [Errno 9] Bad file descriptor
-    elif err.errno == 9:
-        ERRORS.add(with_red(f'{who} problem with socket'))
-    # [Errno 19] No such device
-    elif err.errno == 19:
-        sys.exit(with_red(f'{who} cannot use the current interface'))
-    # [Errno 100] Network is down
-    elif err.errno == 100:
-        ERRORS.add(with_red(f'{who} network is down'))
-    else:
-        globals()['RUN_HARPY'] = False
-        return None
-
-    globals()['RUN_HARPY'] = False
-    return False
+    if not run:
+        globals()['RUN_MAIN'] = False
+    elif not time.time() - globals()['START_MAIN'] < globals()['COMMANDS'].t:
+        globals()['RUN_MAIN'] = False
+        globals()['TIMED_OUT'] = True
 
 
 def signal_handler(_signum, _frame):
@@ -184,4 +167,5 @@ def signal_handler(_signum, _frame):
     :param _frame: Signal frame.
     """
 
-    globals()['RUN_HARPY'] = False
+    globals()['SIGNAL_NUMBER'] = str(_signum)
+    run_main(False)

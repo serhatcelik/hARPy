@@ -2,17 +2,26 @@
 # Released under the MIT license
 # Copyright (c) Serhat Çelik
 
-"""Module for handling the program logo."""
+"""Functions for handling the program logo."""
+
+import re
+import harpy.core.data as data
 
 
 def create_logo():
-    """Create the program logo."""
+    """Create the logo for the program."""
 
-    return [
-        r'|_  _  _ _   ',
-        r'| |(_|| |_)\/',
-        r'        |  / '
+    logo = [
+        fr'{data.F_BLUE}|_ {data.F_GREEN} _  _ _ {data.F_BLUE}  {data.RESET}',
+        fr'{data.F_BLUE}| |{data.F_GREEN}(_|| |_){data.F_BLUE}\/{data.RESET}',
+        fr'{data.F_BLUE}   {data.F_GREEN}     |  {data.F_BLUE}/ {data.RESET}'
     ]
+
+    expression = r'\033\[([0-9]|[0-9]{2})m'  # ESC[ n m
+    # Remove ANSI escape sequences
+    setattr(create_logo, 'logo_len', len(re.sub(expression, '', logo[0])))
+
+    return logo
 
 
 def create_banner():
