@@ -2,7 +2,7 @@
 # Released under the MIT license
 # Copyright (c) Serhat Çelik
 
-"""Module for handling sniff result."""
+"""Module for handling the sniff result."""
 
 import os
 import json
@@ -10,20 +10,17 @@ import harpy.core.data as data
 
 
 class ResultHandler:
-    """Handler of sniff result."""
-
-    vendor = None
+    """Handler of the sniff result."""
 
     def __init__(self, result, results):
-        # Add colons to the MAC address
         self.eth_src_mac = ':'.join(
             result[0][_:_ + 2] for _ in range(0, len(result[0]), 2)
-        )
+        )  # Add colons to the MAC address
         self.arp_opcode = result[1]
         self.arp_snd_mac = ':'.join(
             result[2][_:_ + 2] for _ in range(0, len(result[2]), 2)
         )
-        self.arp_snd_ip = result[3]
+        self.arp_snd_ip = result[-1]
         self.results = results
 
     def __call__(self):
@@ -37,16 +34,16 @@ class ResultHandler:
                     self.arp_snd_mac == self.results[_ + 2]
                 ]:
                     if self.arp_opcode == data.ARP_REQ:
-                        self.results[_ + 3] += 1  # ARP request count
-                    else:
-                        self.results[_ + 4] += 1  # ARP reply count
+                        self.results[_ + 3] += 1  # ARP request count +1
+                    elif self.arp_opcode == data.ARP_REP:
+                        self.results[_ + 4] += 1  # ARP reply count +1
                     return self.results
         self.results.append(self.arp_snd_ip)  # Sender IP address
         self.results.append(self.eth_src_mac)  # Source MAC address
         self.results.append(self.arp_snd_mac)  # Sender MAC address
         self.results.append(1 if self.arp_opcode == data.ARP_REQ else 0)
-        self.results.append(1 if self.arp_opcode != data.ARP_REQ else 0)
-        self.results.append(self.vendor)  # OUI
+        self.results.append(1 if self.arp_opcode == data.ARP_REP else 0)
+        self.results.append(self.get_vendor(self.eth_src_mac))  # OUI
 
         return self.results
 
@@ -63,8 +60,8 @@ class ResultHandler:
                 try:
                     vendors = json.load(vendors_file)
                 except json.decoder.JSONDecodeError:
-                    return ':(('
+                    return ':('
             if src_mac.replace(':', '')[0:6] not in vendors:
                 return 'unknown'
             return vendors[src_mac.replace(':', '')[0:6]]
-        return ':('
+        return ':(('

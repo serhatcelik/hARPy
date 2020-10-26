@@ -12,27 +12,22 @@ import harpy.core.data as data
 class InterfaceHandler:
     """Handler of interfaces."""
 
-    members = dict()
-
     def __init__(self):
         if os.path.isdir(data.SYS_PATH):
-            self.members = {
+            self.mems = {
                 _: None for _ in os.listdir(data.SYS_PATH) if _ != 'lo'
             }  # All interfaces
 
-        for _ in self.members:
-            carrier_path = os.path.join(data.SYS_PATH, _, 'carrier')
-            if os.path.isfile(carrier_path):
-                with open(carrier_path, 'r') as carrier:
-                    try:
-                        self.members[_] = int(carrier.readline(1))
-                    finally:
-                        continue
+        for _ in self.mems:
+            carrier_file = os.path.join(data.SYS_PATH, _, 'carrier')
+            if os.path.isfile(carrier_file):
+                with open(carrier_file, 'r') as carrier:
+                    self.mems[_] = int(carrier.readline(1))
 
     def __call__(self):
-        for _ in self.members:
+        for _ in self.mems:
             # Interface up?
-            if self.members[_]:
+            if self.mems[_]:
                 return _
         return None
 

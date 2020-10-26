@@ -20,75 +20,54 @@ class ParserHandler:
         """Create new command-line arguments."""
 
         parser = argparse.ArgumentParser(
-            prog='harpy',
+            prog=data.HARPY, epilog='Use at your own risk!',
             description=f'By {__author__} <{__email__}> ( {__gitlink__} )',
-            epilog='Use at your own risk!'
         )
+
         group = parser.add_argument_group('required arguments')
 
         parser.add_argument(
-            '-a',
-            action='store_true',
-            help='show program author information and exit',
-            dest='a'
+            '-a', '--author', action='version', version=parser.description,
+            help='show program author information and exit'
         )
         parser.add_argument(
-            '-c',
-            default=data.DEF_CNT,
-            type=int,
-            help='number of times to send each arp request '
-                 '(default: %(default)s)',
-            metavar='count',
-            dest='c'
+            '-c', default=data.DEF_CNT, type=int, metavar='count', dest='c',
+            help='number of times to send each request (def: %(default)s, '
+                 f'min: {data.LIM_CNT})'
         )
         parser.add_argument(
-            '-i',
-            default=InterfaceHandler()(),
-            help='network device to send/sniff packets',
-            metavar='interface',
-            dest='i'
+            '-i', default=InterfaceHandler()(), metavar='interface', dest='i',
+            help='network device to send/sniff packets'
         )
         parser.add_argument(
-            '-l',
-            action='store_true',
-            help='show error logs and exit',
-            dest='l'
+            '-l', '--log', action='version', version=data.LOG_FILE,
+            help='show the location of log file and exit'
         )
         parser.add_argument(
-            '-n',
-            default=data.DEF_NOD,
-            type=int,
-            help='last ip octet to be used to send packets '
-                 '(default: %(default)s)',
-            metavar='node',
-            dest='n'
+            '-n', default=data.DEF_NOD, type=int, metavar='node', dest='n',
+            help='last ip octet to be used to send packets (def: %(default)s, '
+                 f'min: {data.LIM_NOD[0]}, max: {data.LIM_NOD[-1]})'
         )
         parser.add_argument(
-            '-p',
-            action='store_true',
-            help='enable passive mode, do not send any packets',
-            dest='p'
+            '-p', '--passive', action='store_true', dest='p',
+            help='enable passive mode, do not send any packets'
         )
         group.add_argument(
-            '-r',
-            default=None,
-            help='scan range, e.g. 192.168.2.1/24 (valid: /8, /16, /24)',
-            metavar='range',
-            dest='r'
+            '-r', required=True, metavar='range', dest='r',
+            help='scan range, e.g. 192.168.2.1/24 (valid: /8, /16, /24)'
         )
         parser.add_argument(
-            '-s',
-            default=data.DEF_SLP,
-            type=int,
-            help='time to sleep between each arp request in ms '
-                 '(default: %(default)s)',
-            metavar='sleep',
-            dest='s'
+            '-s', default=data.DEF_SLP, type=int, metavar='sleep', dest='s',
+            help='time to sleep between each request in ms (def: %(default)s, '
+                 f'min: {data.LIM_SLP[0]}, max: {data.LIM_SLP[-1]})'
         )
         parser.add_argument(
-            '-v',
-            action='version',
-            version=f'v{__version__}',
+            '-t', default=data.DEF_TIM, type=int, metavar='timeout', dest='t',
+            help='timeout to stop scanning in sec (def: %(default)s, '
+                 f'min: {data.LIM_TIM})'
+        )
+        parser.add_argument(
+            '-v', '--version', action='version', version='v' + __version__,
             help='show program version and exit'
         )
 
@@ -97,7 +76,7 @@ class ParserHandler:
     @staticmethod
     def check_arguments(commands):
         """
-        Check if there are any errors with the command-line arguments.
+        Check the command-line arguments.
 
         :param commands: Parsed command-line arguments.
         """
@@ -107,5 +86,6 @@ class ParserHandler:
             ArgumentHandler.interface_handler(commands.i),
             ArgumentHandler.node_handler(commands.n),
             ArgumentHandler.range_handler(commands.r),
-            ArgumentHandler.sleep_handler(commands.s)
+            ArgumentHandler.sleep_handler(commands.s),
+            ArgumentHandler.timeout_handler(commands.t)
         ]

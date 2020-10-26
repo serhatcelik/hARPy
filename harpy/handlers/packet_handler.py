@@ -2,7 +2,7 @@
 # Released under the MIT license
 # Copyright (c) Serhat Çelik
 
-"""Module for handling packet creation."""
+"""Module for handling packets."""
 
 import socket
 import struct
@@ -11,7 +11,7 @@ import harpy.core.data as data
 
 
 class PacketHandler:
-    """Handler of packet creation."""
+    """Handler of packets."""
 
     @staticmethod
     def create_eth_frame(src_mac):

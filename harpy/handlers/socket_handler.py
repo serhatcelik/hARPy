@@ -6,27 +6,26 @@
 
 import socket
 import harpy.core.data as data
+from harpy.handlers.exception_handler import ExceptionHandler
 
 
 class SocketHandler:
     """Handler of sockets."""
 
+    @ExceptionHandler(data.SOCKET)
     def __init__(self, protocol):
-        try:
-            self.raw_soc = socket.socket(
-                socket.PF_PACKET, socket.SOCK_RAW, socket.htons(protocol)
-            )
-        except OSError as err:
-            if data.oserror_handler(err=err, who=data.ERR_SOCKET) is None:
-                raise
+        self.raw_soc = socket.socket(
+            socket.PF_PACKET, socket.SOCK_RAW, socket.htons(protocol)
+        )
 
     def set_options(self):
         """Set socket options."""
 
-        self.raw_soc.setblocking(True)  # Prevent BlockingIOError
+        self.raw_soc.setblocking(False)  # Non-blocking mode
         self.raw_soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.raw_soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 
+    @ExceptionHandler(data.SOCKET)
     def bind(self, interface, port):
         """
         Bind a socket to an interface.
@@ -35,11 +34,7 @@ class SocketHandler:
         :param port: Port to bind to an interface.
         """
 
-        try:
-            self.raw_soc.bind((interface, port))
-        except OSError as err:
-            if data.oserror_handler(err=err, who=data.ERR_SOCKET) is None:
-                raise
+        self.raw_soc.bind((interface, port))
 
     def close(self):
         """Close a socket."""
