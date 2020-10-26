@@ -4,4 +4,4 @@
 
 """Program version."""
 
-__version__ = '2020.10.23.post1'
+__version__ = '2020.10.26'

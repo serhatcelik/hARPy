@@ -7,12 +7,10 @@
 import os
 import sys
 import time
-import atexit
-import datetime
-import threading
 import traceback
+import logging.handlers
 import harpy.core.data as data
-from harpy.core.data import with_red, with_green
+from harpy.core.data import with_red
 from harpy.threads.send_thread import SendThread
 from harpy.threads.sniff_thread import SniffThread
 from harpy.handlers.echo_handler import EchoHandler
@@ -25,56 +23,56 @@ from harpy.handlers.interface_handler import InterfaceHandler
 
 
 def terminator():
-    """Terminate the program."""
+    """Terminate all threads."""
 
-    print()
+    # Disable the handler to prevent activating it again
+    SignalHandler(*data.SIGNALS).disable()
+
+    print('\n')
     if data.ERRORS:
-        print()
         for _ in data.ERRORS:
             print(_)
+        print()
 
-    print('\ntrying to exit cleanly, please wait...', end=' ', flush=True)
+    if data.TIMED_OUT:
+        print('timed out', end=',' + ' ')
+    elif data.SIGNAL_NUMBER is not None:
+        print('received signal', end=' ' + data.SIGNAL_NUMBER + ',' + ' ')
+    print('cleaning...', end=' ', flush=True)
+
+    terminator_start = time.time()
     for i, _ in enumerate(data.THREADS):
-        start_time = time.time()
-        if hasattr(main, _):
-            getattr(main, _).flag.set()
-            while getattr(main, _).is_alive():
-                # Still alive?
-                if time.time() - start_time > data.TERMINATE_TIMEOUT:
-                    # Last thread?
-                    if i == len(data.THREADS) - 1:
-                        print(with_red(data.FAIL))
-                        # Go to the finally clause without logging
-                        hard_terminator()
-                    else:
-                        break
+        vars(main)[_].flag.set()
+        while vars(main)[_].is_alive():
+            # Still alive?
+            if time.time() - terminator_start >= data.SLEEP_TERMINATOR:
+                # Last thread?
+                if i == len(data.THREADS) - 1:
+                    print(data.FAIL)
+                    hard_terminator()  # Force to exit without logging
+                else:
+                    break
 
-    if hasattr(main, 'socket'):
-        getattr(main, 'socket').close()  # Close the socket
+    vars(main)[data.SOCKET].close()  # Close the socket
 
-    print(with_green(data.SUCCESS))
+    print(data.SUCCESS)
 
 
 def hard_terminator(*args):
     """
-    Terminate the program the hard way.
+    Terminate all threads the hard way.
 
     :param args: Container that contains type, value and traceback.
     """
 
-    try:
-        # Container full?
-        if args:
-            today = str(datetime.datetime.today())
-            with open(data.LOGS_FILE, 'a') as logs:
-                logs.write(today + '\n' + len(today) * '#' + '\n')
-                # pylint: disable=E1120
-                for _ in traceback.format_exception(*args):
-                    logs.write(_)
-                logs.write('\n')
-    finally:
-        EchoHandler().enable_echo()
-        getattr(os, '_exit')(34)  # Force to exit
+    # Container full?
+    if args:
+        logger = logging.getLogger()
+        logger.addHandler(logging.handlers.SysLogHandler(address='/dev/log'))
+        logger.critical(traceback.format_exception(*args))
+
+    EchoHandler().enable()
+    vars(os)['_exit'](34)  # Force to exit
 
 
 def main():
@@ -82,14 +80,11 @@ def main():
 
     sys.excepthook = hard_terminator
 
-    # Register to enable echoing on normal exits
-    atexit.register(EchoHandler().enable_echo)
+    EchoHandler().disable()
 
-    EchoHandler().disable_echo()
-
-    SignalHandler(*data.SIGNALS).disable_handler()
-    SignalHandler(data.SIGCHLD).disable_handler()
-    SignalHandler(data.SIGWINCH).disable_handler()
+    SignalHandler(*data.SIGNALS).disable()
+    SignalHandler(data.SIGCHLD).disable()
+    SignalHandler(data.SIGWINCH).disable()
 
     parser = ParserHandler.add_arguments()
     # No arguments?
@@ -97,66 +92,51 @@ def main():
         sys.exit(parser.print_help())
 
     data.COMMANDS = parser.parse_args()
-    if data.COMMANDS.a:
-        sys.exit(parser.description)
-    elif data.COMMANDS.l:
-        if os.path.isfile(data.LOGS_FILE):
-            with open(data.LOGS_FILE, 'r') as logs:
-                sys.exit(logs.read())
-        sys.exit('no logs')
-    elif data.COMMANDS.r is None:
-        parser.print_usage()
-        sys.exit('harpy: error: the following arguments are required: -r')
+    if None in ParserHandler.check_arguments(data.COMMANDS):
+        sys.exit(with_red('problem with interface'))
+    elif False in ParserHandler.check_arguments(data.COMMANDS):
+        sys.exit(with_red('problem with range'))
 
-    if False in ParserHandler.check_arguments(data.COMMANDS):
-        sys.exit(1)
+    setattr(main, data.SOCKET, SocketHandler(data.SOC_PRO))  # Open a socket
+    vars(main)[data.SOCKET].set_options()
+    vars(main)[data.SOCKET].bind(interface=data.COMMANDS.i, port=data.SOC_POR)
 
-    setattr(main, 'socket', SocketHandler(data.SOC_PRO))  # Open a socket
-    getattr(main, 'socket').set_options()
-    getattr(main, 'socket').bind(interface=data.COMMANDS.i, port=data.SOC_POR)
-
-    data.ETH_SRC = InterfaceHandler.get_mac(getattr(main, 'socket').raw_soc)
+    data.ETH_SRC = InterfaceHandler.get_mac(vars(main)[data.SOCKET].raw_soc)
     data.ARP_SND = data.ETH_SRC
     data.COMMANDS.r = data.new_range(data.COMMANDS)
 
-    setattr(main, 'sniff', SniffThread(getattr(main, 'socket').raw_soc))
-    data.THREADS.append('sniff')
-    getattr(main, 'sniff').start()  # Start sniffing packets
+    setattr(main, data.SNIFF, SniffThread(vars(main)[data.SOCKET].raw_soc))
+    data.THREADS.append(vars(main)[data.SNIFF].name)
+    vars(main)[data.SNIFF].start()  # Start sniffing packets
 
     # Active mode?
     if not data.COMMANDS.p:
-        setattr(main, 'send', SendThread(getattr(main, 'socket').raw_soc))
-        data.THREADS.append('send')
-        getattr(main, 'send').start()  # Start sending packets
+        setattr(main, data.SEND, SendThread(vars(main)[data.SOCKET].raw_soc))
+        data.THREADS.append(vars(main)[data.SEND].name)
+        vars(main)[data.SEND].start()  # Start sending packets
 
-    while data.RUN_HARPY:
-        SignalHandler(*data.SIGNALS).disable_handler()
+    while data.RUN_MAIN:
+        data.run_main()
+        ################################################################
+        SignalHandler(*data.SIGNALS).disable()
         window = WindowHandler(data.SNIFF_RESULTS)
         os.system('clear')
         window.draw_skeleton()
         window()
-        SignalHandler(*data.SIGNALS).activate_handler(data.signal_handler)
+        SignalHandler(*data.SIGNALS).enable(data.signal_handler)
+        ################################################################
+        time.sleep(data.SLEEP_MAIN)
 
-        try:
+        if data.SNIFF_RESULT:
             result = ResultHandler(
                 result=data.SNIFF_RESULT.pop(0),
                 results=data.SNIFF_RESULTS
             )
-        except IndexError:
-            # Reduce screen flickering
-            time.sleep(0.025)
-        else:
-            result.vendor = result.get_vendor(result.eth_src_mac)
             data.SNIFF_RESULTS = result()
-            time.sleep(0.025)
-
-    # Disable the handler to prevent activating it again
-    if threading.current_thread() is threading.main_thread():
-        SignalHandler(*data.SIGNALS).disable_handler()
 
 
 def multi_main():
-    """Main function for setup script."""
+    """Main function for the setup script."""
 
     main()
     terminator()
