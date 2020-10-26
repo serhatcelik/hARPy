@@ -91,8 +91,8 @@ Use at your own risk!
 ----------------------------------------------------------------------------------------------------------
 IP ADDRESS      | ETH MAC ADDRESS   | ARP MAC ADDRESS   | REQ.   | REP.   | VENDOR
 ----------------------------------------------------------------------------------------------------------
-192.168.2.1     | 18:28:61:b2:6f:a4 | 18:28:61:b2:6f:a4 | 1      | 0      | airties wireless networks
-192.168.2.80    | e4:58:e7:15:d5:90 | e4:58:e7:15:d5:90 | 0      | 1      | samsung electronics co.,ltd
+192.168.2.1     | 18:28:61:xx:xx:xx | 18:28:61:xx:xx:xx | 1      | 0      | airties wireless networks
+192.168.2.80    | e4:58:e7:xx:xx:xx | e4:58:e7:xx:xx:xx | 0      | 1      | samsung electronics co.,ltd
 192.168.2.133   | 4c:dd:31:xx:xx:xx | 4c:dd:31:xx:xx:xx | 1      | 0      | samsung electronics co.,ltd
 ```
 
