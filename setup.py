@@ -2,7 +2,7 @@
 # Released under the MIT license
 # Copyright (c) Serhat Çelik
 
-"""Setup script."""
+"""The setup script."""
 
 import setuptools
 from harpy.__version__ import __version__
@@ -26,20 +26,20 @@ setuptools.setup(
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3 :: Only'
     ],
-    python_requires='>=3.6',
+    python_requires='~=3.6',
     package_data={
         '': [
             '*.json'
-        ]
-    },
-    entry_points={
-        'console_scripts': [
-            'harpy = harpy.__main__:multi_main'
         ]
     },
     options={
         'build_scripts': {
             'executable': '/bin/custom_python'
         }
+    },
+    entry_points={
+        'console_scripts': [
+            'harpy = harpy.__main__:multi_main'
+        ]
     }
 )

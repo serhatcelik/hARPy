@@ -52,23 +52,25 @@ Linux only.
 # harpy -h
 ```
 ```
-usage: harpy [-h] [-a] [-c count] [-i interface] [-l] [-n node] [-p] -r range [-s sleep] [-v]
+usage: harpy [-h] [-a] [-c count] [-i interface] [-l] [-n node] [-p] -r range
+             [-s sleep] [-t timeout] [-v]
 
 By Serhat Çelik <prjctsrht@gmail.com> ( https://github.com/serhatcelik )
 
 optional arguments:
-  -h, --help    show this help message and exit
-  -a            show program author information and exit
-  -c count      number of times to send each arp request (default: 1)
-  -i interface  network device to send/sniff packets
-  -l            show error logs and exit
-  -n node       last ip octet to be used to send packets (default: 43)
-  -p            enable passive mode, do not send any packets
-  -s sleep      time to sleep between each arp request in ms (default: 3)
-  -v            show program version and exit
+  -h, --help     show this help message and exit
+  -a, --author   show program author information and exit
+  -c count       number of times to send each request (def: 1, min: 1)
+  -i interface   network device to send/sniff packets
+  -l, --log      show the location of log file and exit
+  -n node        last ip octet to be used to send packets (def: 43, min: 2, max: 253)
+  -p, --passive  enable passive mode, do not send any packets
+  -s sleep       time to sleep between each request in ms (def: 3, min: 2, max: 1000)
+  -t timeout     timeout to stop scanning in sec (def: 1800, min: 5)
+  -v, --version  show program version and exit
 
 required arguments:
-  -r range      scan range, e.g. 192.168.2.1/24 (valid: /8, /16, /24)
+  -r range       scan range, e.g. 192.168.2.1/24 (valid: /8, /16, /24)
 
 Use at your own risk!
 ```
@@ -84,13 +86,13 @@ Use at your own risk!
 |_  _  _ _      | TOTAL HOST: 3
 | |(_|| |_)\/   | TOTAL REQ.: 2
         |  /    | TOTAL REP.: 1
--------------------------------------------------------------------------------------------------------
-^C / ^\ TO EXIT | SENDING: 192.168.2.134
--------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------
+^C / ^\ TO EXIT | SENDING 192.168.2.134
+----------------------------------------------------------------------------------------------------------
 IP ADDRESS      | ETH MAC ADDRESS   | ARP MAC ADDRESS   | REQ.   | REP.   | VENDOR
--------------------------------------------------------------------------------------------------------
-192.168.2.1     | 18:28:61:xx:xx:xx | 18:28:61:xx:xx:xx | 1      | 0      | airties wireless networks
-192.168.2.80    | e4:58:e7:xx:xx:xx | e4:58:e7:xx:xx:xx | 0      | 1      | samsung electronics co.,ltd
+----------------------------------------------------------------------------------------------------------
+192.168.2.1     | 18:28:61:b2:6f:a4 | 18:28:61:b2:6f:a4 | 1      | 0      | airties wireless networks
+192.168.2.80    | e4:58:e7:15:d5:90 | e4:58:e7:15:d5:90 | 0      | 1      | samsung electronics co.,ltd
 192.168.2.133   | 4c:dd:31:xx:xx:xx | 4c:dd:31:xx:xx:xx | 1      | 0      | samsung electronics co.,ltd
 ```
 

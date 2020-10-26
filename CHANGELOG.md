@@ -1,3 +1,11 @@
+# hARPy v2020.10.26
+
+- Fixed an error that caused the program to wait too long before exit.
+- Timeout function has been added.
+- The UI has been improved.
+
+---
+
 # hARPy v2020.10.23.post1
 
 - Minor bug fixes.
