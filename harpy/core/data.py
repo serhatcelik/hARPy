@@ -12,6 +12,7 @@ import time
 ################
 START_MAIN = time.time()
 RUN_MAIN = True
+HANGED_UP = False
 TIMED_OUT = False
 SIGNAL_NUMBER = None
 COMMANDS = None  # Parsed command-line arguments
@@ -37,11 +38,16 @@ VENDORS_FILE = os.path.join(os.path.dirname(__file__), 'vendors.json')
 ###########
 # SIGNALS #
 ###########
+SIGHUP = 1  # Hangup detected on controlling terminal
+SIGKILL = 9  # Kill signal
+SIGSTOP = 19  # Stop process
 SIGCHLD = 17  # Child stopped or terminated
 SIGWINCH = 28  # Window resize signal (4.3BSD, Sun)
 SIGNALS = [
-    _ for _ in range(2, 65) if _ not in (SIGCHLD, SIGWINCH, 9, 19, 32, 33)
-]  # 1: SIGHUP, 9: SIGKILL, 19: SIGSTOP
+    _ for _ in range(2, 65) if _ not in (
+        SIGCHLD, SIGWINCH, SIGKILL, SIGSTOP, 32, 33
+    )
+]
 
 ##########
 # STYLES #
@@ -54,11 +60,9 @@ F_YELLOW = '\033[33m'  # Yellow
 F_BLUE = '\033[34m'  # Blue
 B_YELLOW = '\033[43m'  # Yellow (Background)
 
-#################
-# NOTIFICATIONS #
-#################
-FAIL = '[' + F_RED + 'fail' + RESET + ']'
-SUCCESS = '[' + F_GREEN + 'done' + RESET + ']'
+#########
+# NAMES #
+#########
 HARPY = 'harpy'
 SEND = 'send'
 SNIFF = 'sniff'
@@ -155,8 +159,8 @@ def run_main(run=True):
     if not run:
         globals()['RUN_MAIN'] = False
     elif not time.time() - globals()['START_MAIN'] < globals()['COMMANDS'].t:
-        globals()['RUN_MAIN'] = False
         globals()['TIMED_OUT'] = True
+        globals()['RUN_MAIN'] = False
 
 
 def signal_handler(_signum, _frame):
@@ -168,4 +172,8 @@ def signal_handler(_signum, _frame):
     """
 
     globals()['SIGNAL_NUMBER'] = str(_signum)
+
+    if _signum == globals()['SIGHUP']:
+        globals()['HANGED_UP'] = True
+
     run_main(False)
