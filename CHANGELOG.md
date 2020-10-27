@@ -1,3 +1,9 @@
+# hARPy v2020.10.27.post1
+
+- Minor bug fixes.
+
+---
+
 # hARPy v2020.10.27
 
 - Fixed an error that caused the processes to continue after death of the terminal.
