@@ -28,17 +28,18 @@ def terminator():
     # Disable the handler to prevent activating it again
     SignalHandler(*data.SIGNALS).disable()
 
-    print('\n')
-    if data.ERRORS:
-        for _ in data.ERRORS:
-            print(_)
-        print()
+    if not data.HANGED_UP:
+        print('\n')
+        if data.ERRORS:
+            for _ in data.ERRORS:
+                print(_)
+            print()
 
-    if data.TIMED_OUT:
-        print('timed out', end=',' + ' ')
-    elif data.SIGNAL_NUMBER is not None:
-        print('received signal', end=' ' + data.SIGNAL_NUMBER + ',' + ' ')
-    print('cleaning...', end=' ', flush=True)
+        if data.TIMED_OUT:
+            print('timed out', end=',' + ' ')
+        elif data.SIGNAL_NUMBER is not None:
+            print('received signal', end=' ' + data.SIGNAL_NUMBER + ',' + ' ')
+        print('cleaning...', end=' ', flush=True)
 
     terminator_start = time.time()
     for i, _ in enumerate(data.THREADS):
@@ -48,14 +49,16 @@ def terminator():
             if time.time() - terminator_start >= data.SLEEP_TERMINATOR:
                 # Last thread?
                 if i == len(data.THREADS) - 1:
-                    print(data.FAIL)
+                    if not data.HANGED_UP:
+                        print('[' + data.F_RED + 'fail' + data.RESET + ']')
                     hard_terminator()  # Force to exit without logging
                 else:
                     break
 
     vars(main)[data.SOCKET].close()  # Close the socket
 
-    print(data.SUCCESS)
+    if not data.HANGED_UP:
+        print('[' + data.F_GREEN + 'done' + data.RESET + ']')
 
 
 def hard_terminator(*args):
@@ -85,6 +88,7 @@ def main():
     SignalHandler(*data.SIGNALS).disable()
     SignalHandler(data.SIGCHLD).disable()
     SignalHandler(data.SIGWINCH).disable()
+    SignalHandler(data.SIGHUP).enable(data.signal_handler)
 
     parser = ParserHandler.add_arguments()
     # No arguments?
