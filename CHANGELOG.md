@@ -1,3 +1,9 @@
+# hARPy v2020.10.27
+
+- Fixed an issue that caused the process to continue after the death of terminal.
+
+---
+
 # hARPy v2020.10.26
 
 - Fixed an error that caused the program to wait too long before exit.
