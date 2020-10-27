@@ -1,6 +1,6 @@
 # hARPy v2020.10.27
 
-- Fixed an error that caused the processes to continue after the death of terminal.
+- Fixed an error that caused the processes to continue after death of the terminal.
 
 ---
 
