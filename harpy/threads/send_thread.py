@@ -28,11 +28,11 @@ class SendThread(threading.Thread):
         self.slp = data.COMMANDS.s
         self.flag = threading.Event()
 
-    @ExceptionHandler(data.SEND)
     def run(self):
         while not self.flag.is_set() and data.RUN_MAIN:
             self.send()
 
+    @ExceptionHandler(data.SEND)
     def send(self):
         """Send ARP packets."""
 
