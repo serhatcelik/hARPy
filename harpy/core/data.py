@@ -40,12 +40,12 @@ VENDORS_FILE = os.path.join(os.path.dirname(__file__), 'vendors.json')
 ###########
 SIGHUP = 1  # Hangup detected on controlling terminal
 SIGKILL = 9  # Kill signal
-SIGSTOP = 19  # Stop process
 SIGCHLD = 17  # Child stopped or terminated
+SIGSTOP = 19  # Stop process
 SIGWINCH = 28  # Window resize signal (4.3BSD, Sun)
 SIGNALS = [
     _ for _ in range(2, 65) if _ not in (
-        SIGCHLD, SIGWINCH, SIGKILL, SIGSTOP, 32, 33
+        SIGKILL, SIGCHLD, SIGSTOP, SIGWINCH, 32, 33
     )
 ]
 
