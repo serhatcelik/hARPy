@@ -40,8 +40,8 @@ VENDORS_FILE = os.path.join(os.path.dirname(__file__), 'vendors.json')
 SIGCHLD = 17  # Child stopped or terminated
 SIGWINCH = 28  # Window resize signal (4.3BSD, Sun)
 SIGNALS = [
-    _ for _ in range(1, 65) if _ not in (SIGCHLD, SIGWINCH, 9, 19, 32, 33)
-]  # 9: SIGKILL, 19: SIGSTOP
+    _ for _ in range(2, 65) if _ not in (SIGCHLD, SIGWINCH, 9, 19, 32, 33)
+]  # 1: SIGHUP, 9: SIGKILL, 19: SIGSTOP
 
 ##########
 # STYLES #
