@@ -7,6 +7,7 @@
 import os
 import harpy.core.data as data
 from harpy.core.logo import create_logo, create_banner
+from harpy.handlers.exception_handler import ExceptionHandler
 
 
 class WindowHandler:
@@ -15,6 +16,7 @@ class WindowHandler:
     logo = create_logo()
     logo_space_len = data.MAX_IP_LEN - vars(create_logo)['logo_len']
 
+    @ExceptionHandler()
     def __init__(self, results):
         self.results = results
 
@@ -33,6 +35,7 @@ class WindowHandler:
 
         self.term_col_len = os.get_terminal_size().columns
 
+    @ExceptionHandler()
     def __call__(self):
         for _ in range(0, len(self.results), data.MAIN_COL_NUM):
             ip_address = self.results[_]
@@ -67,6 +70,7 @@ class WindowHandler:
             print(vendor + data.RESET)
 
     @staticmethod
+    @ExceptionHandler()
     def draw_row(*args):
         """
         Draw a row for the result window.
@@ -81,6 +85,7 @@ class WindowHandler:
                 return
             print(col_txt + (col_len - len(col_txt)) * ' ', end=' | ')
 
+    @ExceptionHandler()
     def draw_skeleton(self):
         """Draw the skeleton with the program logo."""
 

@@ -12,7 +12,7 @@ from harpy.core.data import with_red
 class ExceptionHandler:
     """Handler of exceptions."""
 
-    def __init__(self, who):
+    def __init__(self, who=data.HARPY):
         self.who = who  # Responsible for the error
 
     def __call__(self, func):
@@ -22,7 +22,10 @@ class ExceptionHandler:
             except OSError as err:
                 # Operation not permitted
                 if err.errno == 1:
-                    sys.exit(with_red('run me as root'))
+                    sys.exit(self.with_who('run me as root'))
+                # Input/output error
+                elif err.errno == 5:
+                    data.HANGED_UP = True
                 # Bad file descriptor
                 elif err.errno == 9:
                     data.ERRORS.add(self.with_who('problem with socket'))
