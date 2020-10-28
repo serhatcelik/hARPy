@@ -1,9 +1,3 @@
-# hARPy
-
-Active/passive ARP discovery tool.
-
----
-
 # Features
 
 - Suspicious packet detection.
