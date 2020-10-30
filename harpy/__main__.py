@@ -44,11 +44,11 @@ def terminator():
         break
 
     for i, _ in enumerate(data.THREADS):
-        start_terminator = time.time()  # Restore for every thread
         vars(main)[_].flag.set()
+        time_terminator = time.time()  # Restore for every thread
         while vars(main)[_].is_alive():
             # Still alive?
-            if time.time() - start_terminator >= data.SLEEP_TERMINATOR:
+            if time.time() - time_terminator >= data.SLEEP_TERMINATOR:
                 # Last thread?
                 if i == len(data.THREADS) - 1:
                     hard_terminator()  # Force to exit without logging
@@ -125,23 +125,21 @@ def main():
         vars(main)[data.SEND].start()  # Start sending packets
 
     while data.RUN_MAIN:
-        data.run_main()
-        ################################################################
         SignalHandler(*data.SIGNALS).disable()
         window = WindowHandler(data.SNIFF_RESULTS)
         os.system('clear')
         window.draw_skeleton()
         window()
         SignalHandler(*data.SIGNALS).enable(data.signal_handler)
-        ################################################################
-        time.sleep(data.SLEEP_MAIN)
 
-        if data.SNIFF_RESULT:
-            result = ResultHandler(
-                result=data.SNIFF_RESULT.pop(0),
-                results=data.SNIFF_RESULTS
-            )
-            data.SNIFF_RESULTS = result()
+        time_main = time.time()  # Restore after a certain period of time
+        while data.RUN_MAIN and time.time() - time_main < data.SLEEP_MAIN:
+            data.run_main()
+            if data.SNIFF_RESULT:
+                data.SNIFF_RESULTS = ResultHandler(
+                    result=data.SNIFF_RESULT.pop(0),
+                    results=data.SNIFF_RESULTS
+                )()
 
 
 def multi_main():
