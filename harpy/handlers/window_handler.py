@@ -69,6 +69,13 @@ class WindowHandler:
 
     @staticmethod
     @ExceptionHandler()
+    def draw_line():
+        """Draw a horizontal line for the result window. """
+
+        print(os.get_terminal_size().columns * '-')
+
+    @staticmethod
+    @ExceptionHandler()
     def draw_row(*args):
         """
         Draw a row for the result window.
@@ -83,21 +90,12 @@ class WindowHandler:
                 return
             print(col_txt + (col_len - len(col_txt)) * ' ', end=' | ')
 
-    @staticmethod
-    @ExceptionHandler()
-    def draw_line():
-        """Draw a horizontal line for the result window. """
-
-        print(os.get_terminal_size().columns * '-')
-
     @ExceptionHandler()
     def draw_skeleton(self):
         """Draw the skeleton with the program logo."""
 
         if data.SEND_FINISHED:
             info_col = '{}SENDING FINISHED{}'.format(data.GREEN, data.RESET)
-        elif data.SEND_QUEUED:
-            info_col = '{}SENDING QUEUED{}'.format(data.YELLOW, data.RESET)
         else:
             if data.SEND_ADDRESS is None:
                 info_col = ''  # For the first opening delay or passive mode

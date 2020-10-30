@@ -38,4 +38,4 @@ class SignalHandler:
                 except TypeError:
                     # Workaround for _thread.interrupt_main() bug
                     # ( https://bugs.python.org/issue23395 )
-                    continue
+                    pass
