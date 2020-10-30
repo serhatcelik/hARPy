@@ -10,21 +10,20 @@ import time
 ################
 # OVER CONTROL #
 ################
-START_MAIN = time.time()
 RUN_MAIN = True
+TIME_TIMEOUT = time.time()
 TIMED_OUT = False
 SIGNAL_NUMBER = None
 COMMANDS = None  # Parsed command-line arguments
 THREADS = list()  # Container to store threads
 ERRORS = set()  # Container to store errors as non-recurring
-SLEEP_MAIN = 0.03  # Reduce window flickering
+SLEEP_MAIN = 2  # Reduce window flickering
 SLEEP_TERMINATOR = 3  # Prevent looping indefinitely
-SLEEP_SEND = 0.8  # Reduce window flickering
-SLEEP_SNIFF = 0.03  # Reduce window flickering
+SLEEP_SNIFF = 0.025  # Reduce window flickering
+SLEEP_SEND = 0.05  # Reduce window flickering
 SNIFF_RESULT = list()  # Container to store a sniff result
 SNIFF_RESULTS = list()  # Container to store all sniff results
 SEND_FINISHED = False
-SEND_QUEUED = False
 SEND_ADDRESS = None
 
 #############
@@ -152,7 +151,7 @@ def run_main(run=True):
 
     if not run:
         globals()['RUN_MAIN'] = False
-    elif not time.time() - globals()['START_MAIN'] < globals()['COMMANDS'].t:
+    elif time.time() - globals()['TIME_TIMEOUT'] >= globals()['COMMANDS'].t:
         globals()['TIMED_OUT'] = True
         globals()['RUN_MAIN'] = False
 
