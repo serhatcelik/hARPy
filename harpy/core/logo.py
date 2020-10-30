@@ -12,9 +12,9 @@ def create_logo():
     """Create the logo for the program."""
 
     logo = [
-        fr'{data.F_BLUE}|_ {data.F_GREEN} _  _ _ {data.F_BLUE}  {data.RESET}',
-        fr'{data.F_BLUE}| |{data.F_GREEN}(_|| |_){data.F_BLUE}\/{data.RESET}',
-        fr'{data.F_BLUE}   {data.F_GREEN}     |  {data.F_BLUE}/ {data.RESET}'
+        r'{0}|_ {1} _  _ _ {0}  {2}'.format(data.BLUE, data.GREEN, data.RESET),
+        r'{0}| |{1}(_|| |_){0}\/{2}'.format(data.BLUE, data.GREEN, data.RESET),
+        r'{0}   {1}     |  {0}/ {2}'.format(data.BLUE, data.GREEN, data.RESET)
     ]
 
     expression = r'\033\[([0-9]|[0-9]{2})m'  # ESC[ n m

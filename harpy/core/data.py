@@ -12,20 +12,19 @@ import time
 ################
 START_MAIN = time.time()
 RUN_MAIN = True
-HANGED_UP = False
 TIMED_OUT = False
 SIGNAL_NUMBER = None
 COMMANDS = None  # Parsed command-line arguments
-THREADS = list()  # Container to store all threads
+THREADS = list()  # Container to store threads
 ERRORS = set()  # Container to store errors as non-recurring
-SLEEP_MAIN = 0.025  # Reduce window flickering
-SLEEP_TERMINATOR = 5.25  # Prevent looping indefinitely
-SLEEP_SEND = 0.75  # Reduce window flickering
-SLEEP_SNIFF = 0.025  # Reduce window flickering
+SLEEP_MAIN = 0.03  # Reduce window flickering
+SLEEP_TERMINATOR = 3  # Prevent looping indefinitely
+SLEEP_SEND = 0.8  # Reduce window flickering
+SLEEP_SNIFF = 0.03  # Reduce window flickering
 SNIFF_RESULT = list()  # Container to store a sniff result
 SNIFF_RESULTS = list()  # Container to store all sniff results
 SEND_FINISHED = False
-SEND_PAUSED = False
+SEND_QUEUED = False
 SEND_ADDRESS = None
 
 #############
@@ -39,13 +38,13 @@ VENDORS_FILE = os.path.join(os.path.dirname(__file__), 'vendors.json')
 # SIGNALS #
 ###########
 SIGHUP = 1  # Hangup detected on controlling terminal
-SIGKILL = 9  # Kill signal
+SIGKILL = 9  # Kill signal (Cannot be caught or ignored)
 SIGCHLD = 17  # Child stopped or terminated
-SIGSTOP = 19  # Stop process
+SIGSTOP = 19  # Stop process (Cannot be caught or ignored)
 SIGWINCH = 28  # Window resize signal (4.3BSD, Sun)
 SIGNALS = [
-    _ for _ in range(2, 65) if _ not in (
-        SIGKILL, SIGCHLD, SIGSTOP, SIGWINCH, 32, 33
+    _ for _ in range(1, 65) if _ not in (
+        SIGHUP, SIGKILL, SIGCHLD, SIGSTOP, SIGWINCH, 32, 33
     )
 ]
 
@@ -53,17 +52,16 @@ SIGNALS = [
 # STYLES #
 ##########
 RESET = '\033[0m'  # Reset all attributes to their defaults
-F_BLACK = '\033[30m'  # Black
-F_RED = '\033[31m'  # Red
-F_GREEN = '\033[32m'  # Green
-F_YELLOW = '\033[33m'  # Yellow
-F_BLUE = '\033[34m'  # Blue
-B_YELLOW = '\033[43m'  # Yellow (Background)
+BLACK = '\033[30m'  # Black
+RED = '\033[31m'  # Red
+GREEN = '\033[32m'  # Green
+YELLOW = '\033[33m'  # Yellow
+BLUE = '\033[34m'  # Blue
+BG_YELLOW = '\033[43m'  # Yellow (Background)
 
 #########
 # NAMES #
 #########
-HARPY = 'harpy'
 SEND = 'send'
 SNIFF = 'sniff'
 SOCKET = 'socket'
@@ -77,7 +75,7 @@ DEF_SLP = 3  # Sleep default
 DEF_TIM = 1800  # Timeout default
 LIM_CNT = 1  # Count limit
 LIM_NOD = 2, 253  # Node limit
-LIM_SLP = 2, 1000  # Sleep limit
+LIM_SLP = 3, 1000  # Sleep limit
 LIM_TIM = 5  # Timeout limit
 
 #################
@@ -130,30 +128,26 @@ def with_red(text):
     :param text: Text to be colored.
     """
 
-    return globals()['F_RED'] + text + globals()['RESET']
+    return globals()['RED'] + text + globals()['RESET']
 
 
-def new_range(commands):
-    """
-    Return a new scan range in list format.
-
-    :param commands: Parsed command-line arguments.
-    """
+def new_range():
+    """Return a new scan range in list format."""
 
     return [
-        commands.r.split('.')[0],
-        commands.r.split('.')[1],
-        commands.r.split('.')[2],
-        commands.r.split('.')[-1].split('/')[0],
-        commands.r.split('.')[-1].split('/')[-1]
+        globals()['COMMANDS'].r.split('.')[0],
+        globals()['COMMANDS'].r.split('.')[1],
+        globals()['COMMANDS'].r.split('.')[2],
+        globals()['COMMANDS'].r.split('.')[-1].split('/')[0],
+        globals()['COMMANDS'].r.split('.')[-1].split('/')[-1]
     ]
 
 
 def run_main(run=True):
     """
-    Determine whether the program will continue to run.
+    Handler of main process of the program.
 
-    :param run: Value to determine.
+    :param run: Determine whether the program will continue to run.
     """
 
     if not run:
@@ -172,8 +166,4 @@ def signal_handler(_signum, _frame):
     """
 
     globals()['SIGNAL_NUMBER'] = str(_signum)
-
-    if _signum == globals()['SIGHUP']:
-        globals()['HANGED_UP'] = True
-
     run_main(False)
