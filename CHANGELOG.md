@@ -1,4 +1,4 @@
-# hARPy v
+# hARPy v2020.10.30
 
 - Fixed an error that occurred when running the program in the background.
 - Fixed an error that occurred when running the program outside of the terminal.
