@@ -14,8 +14,6 @@ class SignalHandler:
     def __init__(self, *signals):
         self.signals = signals
 
-        self.flag = threading.current_thread() is threading.main_thread()
-
     def enable(self, handler):
         """
         Enable the handler to capture incoming signals.
@@ -23,14 +21,14 @@ class SignalHandler:
         :param handler: Incoming signal handler.
         """
 
-        if self.flag:
+        if threading.current_thread() is threading.main_thread():
             for _ in self.signals:
                 signal.signal(_, handler)
 
     def disable(self):
         """Disable the handler to ignore incoming signals."""
 
-        if self.flag:
+        if threading.current_thread() is threading.main_thread():
             # Be sure to disable the handler
             while True:
                 try:

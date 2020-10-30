@@ -20,8 +20,8 @@ class ParserHandler:
         """Create new command-line arguments."""
 
         parser = argparse.ArgumentParser(
-            prog=data.HARPY, epilog='Use at your own risk!',
-            description=f'By {__author__} <{__email__}> ( {__gitlink__} )',
+            prog='harpy', epilog='Use at your own risk!',
+            description=f'By {__author__} <{__email__}> ( {__gitlink__} )'
         )
 
         group = parser.add_argument_group('required arguments')
@@ -32,8 +32,8 @@ class ParserHandler:
         )
         parser.add_argument(
             '-c', default=data.DEF_CNT, type=int, metavar='count', dest='c',
-            help='number of times to send each request (def: %(default)s, '
-                 f'min: {data.LIM_CNT})'
+            help='number of times to send each request (def|min: '
+                 '%(default)s|{})'.format(data.LIM_CNT)
         )
         parser.add_argument(
             '-i', default=InterfaceHandler()(), metavar='interface', dest='i',
@@ -45,8 +45,8 @@ class ParserHandler:
         )
         parser.add_argument(
             '-n', default=data.DEF_NOD, type=int, metavar='node', dest='n',
-            help='last ip octet to be used to send packets (def: %(default)s, '
-                 f'min: {data.LIM_NOD[0]}, max: {data.LIM_NOD[-1]})'
+            help='last ip octet to be used to send packets (def|min|max: '
+                 '%(default)s|{}|{})'.format(data.LIM_NOD[0], data.LIM_NOD[-1])
         )
         parser.add_argument(
             '-p', '--passive', action='store_true', dest='p',
@@ -58,13 +58,13 @@ class ParserHandler:
         )
         parser.add_argument(
             '-s', default=data.DEF_SLP, type=int, metavar='sleep', dest='s',
-            help='time to sleep between each request in ms (def: %(default)s, '
-                 f'min: {data.LIM_SLP[0]}, max: {data.LIM_SLP[-1]})'
+            help='time to sleep between each request in ms (def|min|max: '
+                 '%(default)s|{}|{})'.format(data.LIM_SLP[0], data.LIM_SLP[-1])
         )
         parser.add_argument(
             '-t', default=data.DEF_TIM, type=int, metavar='timeout', dest='t',
-            help='timeout to stop scanning in sec (def: %(default)s, '
-                 f'min: {data.LIM_TIM})'
+            help='timeout to stop scanning in sec (def|min: '
+                 '%(default)s|{})'.format(data.LIM_TIM)
         )
         parser.add_argument(
             '-v', '--version', action='version', version='v' + __version__,

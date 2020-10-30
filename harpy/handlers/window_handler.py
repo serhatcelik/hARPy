@@ -16,7 +16,6 @@ class WindowHandler:
     logo = create_logo()
     logo_space_len = data.MAX_IP_LEN - vars(create_logo)['logo_len']
 
-    @ExceptionHandler()
     def __init__(self, results):
         self.results = results
 
@@ -33,8 +32,6 @@ class WindowHandler:
         for i, _ in enumerate(self.banner_results):
             self.banner[i] += str(_)
 
-        self.term_col_len = os.get_terminal_size().columns
-
     @ExceptionHandler()
     def __call__(self):
         for _ in range(0, len(self.results), data.MAIN_COL_NUM):
@@ -47,25 +44,26 @@ class WindowHandler:
             arp_request = self.results[_ + 3]
             req_space_len = data.MAX_REQ_LEN - len(str(arp_request))
             if req_space_len < 0:
-                arp_request = '9' * data.MAX_REQ_LEN  # Prevent distortion
+                arp_request = data.MAX_REQ_LEN * '9'  # Prevent distortion
                 req_space_len = data.MAX_REQ_LEN - len(str(arp_request))
             arp_reply = self.results[_ + 4]
             rep_space_len = data.MAX_REP_LEN - len(str(arp_reply))
             if rep_space_len < 0:
-                arp_reply = '9' * data.MAX_REP_LEN
+                arp_reply = data.MAX_REP_LEN * '9'
                 rep_space_len = data.MAX_REP_LEN - len(str(arp_reply))
             vendor = self.results[_ + 5]
 
             # Suspicious packet?!
             if eth_mac_address != arp_mac_address:
-                print(data.B_YELLOW + data.F_BLACK, end='')
+                print(data.BG_YELLOW + data.BLACK, end='')
             print(ip_address + ip_space_len * ' ', end=' | ')
             print(eth_mac_address + eth_mac_space_len * ' ', end=' | ')
             print(arp_mac_address + arp_mac_space_len * ' ', end=' | ')
             print(str(arp_request) + req_space_len * ' ', end=' | ')
             print(str(arp_reply) + rep_space_len * ' ', end=' | ')
-            if data.MAX_ALL_LEN + len(vendor) > self.term_col_len:
-                limit = self.term_col_len - data.MAX_ALL_LEN - len('...')
+            term_col_len = os.get_terminal_size().columns
+            if data.MAX_ALL_LEN + len(vendor) > term_col_len:
+                limit = term_col_len - data.MAX_ALL_LEN - len('...')
                 vendor = vendor[0:limit] + '...'  # Shorten the result
             print(vendor + data.RESET)
 
@@ -75,7 +73,7 @@ class WindowHandler:
         """
         Draw a row for the result window.
 
-        :param args: Container that contains column text and column length.
+        :param args: Container that contains column texts and lengths.
         """
 
         for col_txt, col_len in args:
@@ -85,19 +83,26 @@ class WindowHandler:
                 return
             print(col_txt + (col_len - len(col_txt)) * ' ', end=' | ')
 
+    @staticmethod
+    @ExceptionHandler()
+    def draw_line():
+        """Draw a horizontal line for the result window. """
+
+        print(os.get_terminal_size().columns * '-')
+
     @ExceptionHandler()
     def draw_skeleton(self):
         """Draw the skeleton with the program logo."""
 
         if data.SEND_FINISHED:
-            info_col = data.F_GREEN + 'SENDING FINISHED' + data.RESET
-        elif data.SEND_PAUSED:
-            info_col = data.F_YELLOW + 'SENDING PAUSED' + data.RESET
+            info_col = '{}SENDING FINISHED{}'.format(data.GREEN, data.RESET)
+        elif data.SEND_QUEUED:
+            info_col = '{}SENDING QUEUED{}'.format(data.YELLOW, data.RESET)
         else:
             if data.SEND_ADDRESS is None:
                 info_col = ''  # For the first opening delay or passive mode
             else:
-                info_col = 'SENDING' + ' ' + data.SEND_ADDRESS
+                info_col = 'SENDING {}'.format(data.SEND_ADDRESS)
 
         #################
         # LOGO & BANNER #
@@ -109,9 +114,9 @@ class WindowHandler:
         #######
         # ROW #
         #######
-        print(self.term_col_len * '-')
+        self.draw_line()
         self.draw_row([r'^C / ^\ TO EXIT', data.MAX_IP_LEN], [info_col, -1])
-        print(self.term_col_len * '-')
+        self.draw_line()
         self.draw_row(
             ['IP ADDRESS', data.MAX_IP_LEN],
             ['ETH MAC ADDRESS', data.MAX_ETH_MAC_LEN],
@@ -120,4 +125,4 @@ class WindowHandler:
             ['REP.', data.MAX_REP_LEN],
             ['VENDOR', -1]
         )
-        print(self.term_col_len * '-')
+        self.draw_line()

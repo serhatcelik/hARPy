@@ -4,7 +4,7 @@
 
 """Module for handling the terminal echo."""
 
-import atexit
+import sys
 import termios
 
 
@@ -12,22 +12,20 @@ class EchoHandler:
     """Handler of the terminal echo."""
 
     def __init__(self):
-        self.descriptor = 0  # STDIN
-        self.new = termios.tcgetattr(self.descriptor)
+        self.descriptor = sys.stdin.fileno()
 
-    @staticmethod
-    @atexit.register  # Enable the terminal echo at normal program termination
-    def enable():
+    def enable(self):
         """Enable the terminal echo."""
 
-        descriptor = 0
-        new = termios.tcgetattr(descriptor)
-
-        new[3] |= termios.ECHO
-        termios.tcsetattr(descriptor, termios.TCSANOW, new)
+        if sys.stdin.isatty():
+            new = termios.tcgetattr(self.descriptor)
+            new[3] |= termios.ECHO
+            termios.tcsetattr(self.descriptor, termios.TCSANOW, new)
 
     def disable(self):
         """Disable the terminal echo."""
 
-        self.new[3] &= ~termios.ECHO
-        termios.tcsetattr(self.descriptor, termios.TCSANOW, self.new)
+        if sys.stdin.isatty():
+            new = termios.tcgetattr(self.descriptor)
+            new[3] &= ~termios.ECHO
+            termios.tcsetattr(self.descriptor, termios.TCSANOW, new)

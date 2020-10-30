@@ -6,6 +6,7 @@
 
 import re
 import harpy.core.data as data
+from harpy.core.data import with_red
 from harpy.handlers.interface_handler import InterfaceHandler
 
 
@@ -23,8 +24,6 @@ class ArgumentHandler:
         if arg < data.LIM_CNT:
             data.COMMANDS.c = data.LIM_CNT
 
-        return True
-
     @staticmethod
     def interface_handler(arg):
         """
@@ -33,9 +32,13 @@ class ArgumentHandler:
         :param arg: Network device to send/sniff packets.
         """
 
-        return None if arg is None or arg == 'lo' or not (
-                arg in InterfaceHandler().mems and InterfaceHandler().mems[arg]
-        ) else True
+        if arg is False:
+            print(with_red('problem with network'))
+            return False
+        if arg in InterfaceHandler().mems and InterfaceHandler().mems[arg]:
+            return True
+        print(with_red('problem with network device, {}'.format(arg)))
+        return False
 
     @staticmethod
     def node_handler(arg):
@@ -48,8 +51,6 @@ class ArgumentHandler:
         if not data.LIM_NOD[0] <= arg <= data.LIM_NOD[-1]:
             data.COMMANDS.n = data.DEF_NOD
 
-        return True
-
     @staticmethod
     def range_handler(arg):
         """
@@ -59,9 +60,12 @@ class ArgumentHandler:
         """
 
         octet = '([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])'  # [0, 255]
-        expression = fr'^({octet}\.{octet}\.{octet}\.{octet}/(8|16|24))$'
+        expression = r'^({0}\.{0}\.{0}\.{0}/(8|16|24))$'.format(octet)
 
-        return bool(re.search(expression, arg))
+        if not bool(re.search(expression, arg)):
+            print(with_red('problem with scan range, {}'.format(arg)))
+            return False
+        return True
 
     @staticmethod
     def sleep_handler(arg):
@@ -76,8 +80,6 @@ class ArgumentHandler:
         elif arg > data.LIM_SLP[-1]:
             data.COMMANDS.s = data.LIM_SLP[-1]
 
-        return True
-
     @staticmethod
     def timeout_handler(arg):
         """
@@ -88,5 +90,3 @@ class ArgumentHandler:
 
         if arg < data.LIM_TIM:
             data.COMMANDS.t = data.LIM_TIM
-
-        return True

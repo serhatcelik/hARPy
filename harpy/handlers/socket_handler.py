@@ -28,7 +28,7 @@ class SocketHandler:
     @ExceptionHandler(data.SOCKET)
     def bind(self, interface, port):
         """
-        Bind a socket to an interface.
+        Bind the socket to an interface.
 
         :param interface: Network device to send/sniff packets.
         :param port: Port to bind to an interface.
@@ -37,6 +37,6 @@ class SocketHandler:
         self.raw_soc.bind((interface, port))
 
     def close(self):
-        """Close a socket."""
+        """Close the socket."""
 
         self.raw_soc.close()
