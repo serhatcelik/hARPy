@@ -17,15 +17,20 @@ setuptools.setup(
     author=__author__,
     author_email=__email__,
     url=__gitlink__,
-    description='Harpy who is using ARP',
+    description='Active/passive ARP discovery tool',
     long_description=long_description,
     long_description_content_type='text/markdown',
     packages=setuptools.find_packages(),
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Operating System :: POSIX :: Linux',
-        'Programming Language :: Python :: 3 :: Only'
+        'Programming Language :: Python :: 3 :: Only',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ],
+    keywords=['harpy', 'arp', 'discovery'],
     python_requires='~=3.6',
     package_data={
         '': [

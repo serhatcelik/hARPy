@@ -3,7 +3,7 @@
 - Suspicious packet detection.
 - Active or passive scan option.
 - Ability to send packets from a fake IP address.
-- Ability to show total host and ARP request/reply count.
+- Ability to show number of hosts and ARP request/reply count.
 - Option to determine the amount of ARP requests to be sent.
 - Option to determine the sleep time between each ARP request.
 
@@ -35,7 +35,7 @@ Linux only.
 # Upgrade
 
 ```shell script
-# pip3 install --upgrade harpy-prjct
+# pip3 install -U harpy-prjct
 ```
 
 ---
@@ -54,13 +54,13 @@ By Serhat Çelik <prjctsrht@gmail.com> ( https://github.com/serhatcelik )
 optional arguments:
   -h, --help     show this help message and exit
   -a, --author   show program author information and exit
-  -c count       number of times to send each request (def: 1, min: 1)
+  -c count       number of times to send each request (def|min: 1|1)
   -i interface   network device to send/sniff packets
   -l, --log      show the location of log file and exit
-  -n node        last ip octet to be used to send packets (def: 43, min: 2, max: 253)
+  -n node        last ip octet to be used to send packets (def|min|max: 43|2|253)
   -p, --passive  enable passive mode, do not send any packets
-  -s sleep       time to sleep between each request in ms (def: 3, min: 2, max: 1000)
-  -t timeout     timeout to stop scanning in sec (def: 1800, min: 5)
+  -s sleep       time to sleep between each request in ms (def|min|max: 3|3|1000)
+  -t timeout     timeout to stop scanning in sec (def|min: 1800|5)
   -v, --version  show program version and exit
 
 required arguments:

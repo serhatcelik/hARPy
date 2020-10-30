@@ -1,3 +1,11 @@
+# hARPy v
+
+- Fixed an error that occurred when running the program in the background.
+- Fixed an error that occurred when running the program outside of the terminal.
+- The UI has been improved.
+
+---
+
 # hARPy v2020.10.27.post1
 
 - Minor bug fixes.
