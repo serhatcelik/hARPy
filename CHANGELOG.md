@@ -1,3 +1,9 @@
+# hARPy v2020.10.30.post1
+
+- Performance improvements.
+
+---
+
 # hARPy v2020.10.30
 
 - Fixed an error that occurred when running the program in the background.
