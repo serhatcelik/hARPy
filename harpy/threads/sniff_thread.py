@@ -20,12 +20,11 @@ class SniffThread(threading.Thread):
 
     def __init__(self, raw_soc):
         super().__init__()
+
         self.name = data.SNIFF
+        self.flag = threading.Event()
 
         self.raw_soc = raw_soc
-
-        self.rng = data.COMMANDS.r
-        self.flag = threading.Event()
 
     @ExceptionHandler(data.SNIFF)
     def run(self):
@@ -36,6 +35,7 @@ class SniffThread(threading.Thread):
             except BlockingIOError:
                 time.sleep(data.SLEEP_SNIFF)
             else:
+                self.packet += b' ' * 42  # In case of IndexError
                 self.sniff()
 
     def sniff(self):
@@ -60,4 +60,3 @@ class SniffThread(threading.Thread):
                 data.SNIFF_RESULT.append(
                             [eth_src_mac, arp_opcode, arp_snd_mac, arp_snd_ip]
                         )
-                return

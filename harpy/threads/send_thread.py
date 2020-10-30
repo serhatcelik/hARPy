@@ -18,7 +18,9 @@ class SendThread(threading.Thread):
 
     def __init__(self, raw_soc):
         super().__init__()
+
         self.name = data.SEND
+        self.flag = threading.Event()
 
         self.raw_soc = raw_soc
 
@@ -26,7 +28,6 @@ class SendThread(threading.Thread):
         self.nod = data.COMMANDS.n
         self.rng = data.COMMANDS.r
         self.slp = data.COMMANDS.s
-        self.flag = threading.Event()
 
     def run(self):
         while not self.flag.is_set() and data.RUN_MAIN:
@@ -71,12 +72,12 @@ class SendThread(threading.Thread):
                 try:
                     self.raw_soc.send(eth_frame + arp_header)  # Send a packet
                 except BlockingIOError:
-                    data.SEND_PAUSED = True
                     time.sleep(data.SLEEP_SEND)
+                    data.SEND_QUEUED = True
                 else:
-                    data.SEND_PAUSED = False
                     time.sleep(self.slp / 1000)
                     new_count -= 1
+                    data.SEND_QUEUED = False
 
         data.SEND_FINISHED = True
         self.flag.set()
