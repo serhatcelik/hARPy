@@ -73,11 +73,9 @@ class SendThread(threading.Thread):
                     self.raw_soc.send(eth_frame + arp_header)  # Send a packet
                 except BlockingIOError:
                     time.sleep(data.SLEEP_SEND)
-                    data.SEND_QUEUED = True
                 else:
                     time.sleep(self.slp / 1000)
                     new_count -= 1
-                    data.SEND_QUEUED = False
 
         data.SEND_FINISHED = True
         self.flag.set()
