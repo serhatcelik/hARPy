@@ -8,7 +8,7 @@ import time
 import socket
 import struct
 import threading
-import harpy.core.data as data
+import harpy.data.core as core
 from harpy.handlers.packet_handler import PacketHandler
 from harpy.handlers.exception_handler import ExceptionHandler
 
@@ -16,24 +16,24 @@ from harpy.handlers.exception_handler import ExceptionHandler
 class SendThread(threading.Thread):
     """Handler of the send thread."""
 
-    def __init__(self, raw_soc):
+    def __init__(self, l2soc):
         super().__init__()
 
-        self.name = data.SEND
+        self.name = core.SEND
         self.flag = threading.Event()
 
-        self.raw_soc = raw_soc
+        self.l2soc = l2soc
 
-        self.cnt = data.COMMANDS.c
-        self.nod = data.COMMANDS.n
-        self.rng = data.COMMANDS.r
-        self.slp = data.COMMANDS.s
+        self.cnt = core.COMMANDS.c
+        self.nod = core.COMMANDS.n
+        self.rng = core.COMMANDS.r
+        self.slp = core.COMMANDS.s
 
     def run(self):
-        while not self.flag.is_set() and data.RUN_MAIN:
+        while not self.flag.is_set() and core.RUN_MAIN:
             self.send()
 
-    @ExceptionHandler(data.SEND)
+    @ExceptionHandler(core.SEND)
     def send(self):
         """Send ARP packets."""
 
@@ -53,7 +53,7 @@ class SendThread(threading.Thread):
             if self.flag.is_set():
                 return
             tgt_ip = socket.inet_ntoa(struct.pack('!I', _))
-            data.SEND_ADDRESS = tgt_ip
+            core.SEND_ADDRESS = tgt_ip
             new_count = self.cnt  # Restore the original value at every step
             while not self.flag.is_set() and new_count > 0:
                 # Gratuitous ARP?
@@ -62,20 +62,20 @@ class SendThread(threading.Thread):
                 else:
                     snd_ip = '.'.join(tgt_ip.split('.')[0:3] + [str(self.nod)])
 
-                eth_frame = PacketHandler.create_eth_frame(data.ETH_SRC)
+                eth_frame = PacketHandler.create_eth_frame(core.ETH_SRC)
                 arp_header = PacketHandler.create_arp_header(
-                    snd_mac=data.ARP_SND,
+                    snd_mac=core.ARP_SND,
                     snd_ip=snd_ip,
                     tgt_ip=tgt_ip
                 )
 
                 try:
-                    self.raw_soc.send(eth_frame + arp_header)  # Send a packet
+                    self.l2soc.send(eth_frame + arp_header)  # Send a packet
                 except BlockingIOError:
-                    time.sleep(data.SLEEP_SEND)
+                    time.sleep(core.SLEEP_SEND)
                 else:
                     time.sleep(self.slp / 1000)
                     new_count -= 1
 
-        data.SEND_FINISHED = True
+        core.SEND_FINISHED = True
         self.flag.set()

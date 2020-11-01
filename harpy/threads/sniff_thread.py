@@ -9,7 +9,8 @@ import socket
 import struct
 import binascii
 import threading
-import harpy.core.data as data
+import harpy.data.core as core
+import harpy.data.functions as func
 from harpy.handlers.exception_handler import ExceptionHandler
 
 
@@ -18,24 +19,23 @@ class SniffThread(threading.Thread):
 
     packet = None
 
-    def __init__(self, raw_soc):
+    def __init__(self, l2soc):
         super().__init__()
 
-        self.name = data.SNIFF
+        self.name = core.SNIFF
         self.flag = threading.Event()
 
-        self.raw_soc = raw_soc
+        self.l2soc = l2soc
 
-    @ExceptionHandler(data.SNIFF)
+    @ExceptionHandler(core.SNIFF)
     def run(self):
-        while not self.flag.is_set() and data.RUN_MAIN:
+        while not self.flag.is_set() and core.RUN_MAIN:
             try:
                 # Receive a packet
-                self.packet = self.raw_soc.recv(data.SOC_BUF)
+                self.packet = self.l2soc.recv(core.SOC_BUF)
             except BlockingIOError:
-                time.sleep(data.SLEEP_SNIFF)
+                time.sleep(core.SLEEP_SNIFF)
             else:
-                self.packet += b' ' * 42  # In case of IndexError
                 self.sniff()
 
     def sniff(self):
@@ -45,10 +45,10 @@ class SniffThread(threading.Thread):
         eth_frame = struct.unpack('!6s6s2s', self.packet[0:14])
         eth_src_mac = binascii.hexlify(eth_frame[1]).decode('utf-8')
         # Not own MAC address?
-        if eth_src_mac != data.ETH_SRC:
+        if eth_src_mac != core.ETH_SRC:
             eth_type = binascii.hexlify(eth_frame[2]).decode('utf-8')
             # EtherType ARP?
-            if eth_type == data.ETH_TYP:
+            if eth_type == core.ETH_TYP:
                 # ARP header from the packet
                 arp_header = struct.unpack(
                     '!2s2s1s1s2s6s4s6s4s', self.packet[14:42]
@@ -57,6 +57,10 @@ class SniffThread(threading.Thread):
                 arp_snd_mac = binascii.hexlify(arp_header[5]).decode('utf-8')
                 arp_snd_ip = socket.inet_ntoa(arp_header[6])
 
-                data.SNIFF_RESULT.append(
-                            [eth_src_mac, arp_opcode, arp_snd_mac, arp_snd_ip]
-                        )
+                if True in [
+                        core.COMMANDS.f and func.new_ip(arp_snd_ip),
+                        not core.COMMANDS.f
+                ]:
+                    core.SNIFF_RESULT.append(
+                        [eth_src_mac, arp_opcode, arp_snd_mac, arp_snd_ip]
+                    )
