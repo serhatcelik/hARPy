@@ -5,8 +5,9 @@
 """Module for handling the result window."""
 
 import os
-import harpy.core.data as data
-from harpy.core.logo import create_logo, create_banner
+import harpy.data.core as core
+import harpy.data.functions as func
+from harpy.data.logo import create_logo, create_banner
 from harpy.handlers.exception_handler import ExceptionHandler
 
 
@@ -14,16 +15,16 @@ class WindowHandler:
     """Handler of the result window."""
 
     logo = create_logo()
-    logo_space_len = data.MAX_IP_LEN - vars(create_logo)['logo_len']
+    logo_space_len = core.MAX_IP_LEN - vars(create_logo)['logo_len']
 
     def __init__(self, results):
         self.results = results
 
         self.banner = create_banner()
         self.banner_results = [
-            len(list(_ for _ in range(0, len(results), data.MAIN_COL_NUM))),
-            sum(results[_] for _ in range(3, len(results), data.MAIN_COL_NUM)),
-            sum(results[_] for _ in range(4, len(results), data.MAIN_COL_NUM))
+            len(list(_ for _ in range(0, len(results), core.CONT_STP_NUM))),
+            sum(results[_] for _ in range(3, len(results), core.CONT_STP_NUM)),
+            sum(results[_] for _ in range(4, len(results), core.CONT_STP_NUM))
         ]
 
         ##########
@@ -32,40 +33,44 @@ class WindowHandler:
         for i, _ in enumerate(self.banner_results):
             self.banner[i] += str(_)
 
+        ##########################################
+        # ETHERNET MAC ADDRESS & ARP MAC ADDRESS #
+        ##########################################
+        core.CHANGE_TO_ARP = not core.CHANGE_TO_ARP
+
     @ExceptionHandler()
     def __call__(self):
-        for _ in range(0, len(self.results), data.MAIN_COL_NUM):
+        for _ in range(0, len(self.results), core.CONT_STP_NUM):
             ip_address = self.results[_]
-            ip_space_len = data.MAX_IP_LEN - len(ip_address)
             eth_mac_address = self.results[_ + 1]
-            eth_mac_space_len = data.MAX_ETH_MAC_LEN - len(eth_mac_address)
             arp_mac_address = self.results[_ + 2]
-            arp_mac_space_len = data.MAX_ARP_MAC_LEN - len(arp_mac_address)
             arp_request = self.results[_ + 3]
-            req_space_len = data.MAX_REQ_LEN - len(str(arp_request))
+            req_space_len = core.MAX_REQ_LEN - len(str(arp_request))
             if req_space_len < 0:
-                arp_request = data.MAX_REQ_LEN * '9'  # Prevent distortion
-                req_space_len = data.MAX_REQ_LEN - len(str(arp_request))
+                arp_request = core.MAX_REQ_LEN * '9'  # Prevent distortion
             arp_reply = self.results[_ + 4]
-            rep_space_len = data.MAX_REP_LEN - len(str(arp_reply))
+            rep_space_len = core.MAX_REP_LEN - len(str(arp_reply))
             if rep_space_len < 0:
-                arp_reply = data.MAX_REP_LEN * '9'
-                rep_space_len = data.MAX_REP_LEN - len(str(arp_reply))
+                arp_reply = core.MAX_REP_LEN * '9'
             vendor = self.results[_ + 5]
 
             # Suspicious packet?!
             if eth_mac_address != arp_mac_address:
-                print(data.BG_YELLOW + data.BLACK, end='')
-            print(ip_address + ip_space_len * ' ', end=' | ')
-            print(eth_mac_address + eth_mac_space_len * ' ', end=' | ')
-            print(arp_mac_address + arp_mac_space_len * ' ', end=' | ')
-            print(str(arp_request) + req_space_len * ' ', end=' | ')
-            print(str(arp_reply) + rep_space_len * ' ', end=' | ')
-            term_col_len = os.get_terminal_size().columns
-            if data.MAX_ALL_LEN + len(vendor) > term_col_len:
-                limit = term_col_len - data.MAX_ALL_LEN - len('...')
-                vendor = vendor[0:limit] + '...'  # Shorten the result
-            print(vendor + data.RESET)
+                if core.CHANGE_TO_ARP:
+                    eth_mac_address += '?'
+                else:
+                    eth_mac_address = arp_mac_address + '?'
+                print(core.BG_YELLOW + core.BLACK, end='')
+            print(ip_address.ljust(core.MAX_IP_LEN), end=' | ')
+            print(eth_mac_address.ljust(core.MAX_MAC_LEN), end=' | ')
+            print(str(arp_request).ljust(core.MAX_REQ_LEN), end=' | ')
+            print(str(arp_reply).ljust(core.MAX_REP_LEN), end=' | ')
+            vendor = func.with_dot(
+                text=vendor,
+                width=os.get_terminal_size().columns,
+                xref=core.MAX_ALL_LEN
+            )
+            print(vendor + core.RESET)
 
     @staticmethod
     @ExceptionHandler()
@@ -80,27 +85,26 @@ class WindowHandler:
         """
         Draw a row for the result window.
 
-        :param args: Container that contains column texts and lengths.
+        :param args: Container that contains column texts.
         """
 
-        for col_txt, col_len in args:
+        for _ in args:
             # Last column?
-            if col_len < 0:
-                print(col_txt)
+            if len(_) > 1:
+                print(_[0])
                 return
-            print(col_txt + (col_len - len(col_txt)) * ' ', end=' | ')
+            print(_[0], end=' | ')
 
     @ExceptionHandler()
     def draw_skeleton(self):
         """Draw the skeleton with the program logo."""
 
-        if data.SEND_FINISHED:
-            info_col = '{}SENDING FINISHED{}'.format(data.GREEN, data.RESET)
+        if core.COMMANDS.p:
+            info_col = 'PASSIVE MODE'
+        elif core.SEND_FINISHED:
+            info_col = core.GREEN + 'SENDING FINISHED' + core.RESET
         else:
-            if data.SEND_ADDRESS is None:
-                info_col = ''  # For the first opening delay or passive mode
-            else:
-                info_col = 'SENDING {}'.format(data.SEND_ADDRESS)
+            info_col = 'SENDING' + ' ' + core.SEND_ADDRESS
 
         #################
         # LOGO & BANNER #
@@ -113,14 +117,16 @@ class WindowHandler:
         # ROW #
         #######
         self.draw_line()
-        self.draw_row([r'^C / ^\ TO EXIT', data.MAX_IP_LEN], [info_col, -1])
+        self.draw_row(
+            ['PRESS ^C TO EXIT'.ljust(core.MAX_IP_LEN)],
+            [info_col, None]
+        )
         self.draw_line()
         self.draw_row(
-            ['IP ADDRESS', data.MAX_IP_LEN],
-            ['ETH MAC ADDRESS', data.MAX_ETH_MAC_LEN],
-            ['ARP MAC ADDRESS', data.MAX_ARP_MAC_LEN],
-            ['REQ.', data.MAX_REQ_LEN],
-            ['REP.', data.MAX_REP_LEN],
-            ['VENDOR', -1]
+            ['IP ADDRESS'.ljust(core.MAX_IP_LEN)],
+            ['MAC ADDRESS'.ljust(core.MAX_MAC_LEN)],
+            ['REQ.'.ljust(core.MAX_REQ_LEN)],
+            ['REP.'.ljust(core.MAX_REP_LEN)],
+            ['VENDOR', None]
         )
         self.draw_line()

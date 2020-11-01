@@ -7,7 +7,7 @@
 import socket
 import struct
 import binascii
-import harpy.core.data as data
+import harpy.data.core as core
 
 
 class PacketHandler:
@@ -23,9 +23,9 @@ class PacketHandler:
 
         return struct.pack(
             '!6s6s2s',
-            binascii.unhexlify(data.ETH_DST),
+            binascii.unhexlify(core.ETH_DST),
             binascii.unhexlify(src_mac),
-            binascii.unhexlify(data.ETH_TYP)
+            binascii.unhexlify(core.ETH_TYP)
         )
 
     @staticmethod
@@ -40,13 +40,13 @@ class PacketHandler:
 
         return struct.pack(
             '!2s2s1s1s2s6s4s6s4s',
-            binascii.unhexlify(data.ARP_HWT),
-            binascii.unhexlify(data.ARP_PRT),
-            binascii.unhexlify(data.ARP_HWS),
-            binascii.unhexlify(data.ARP_PRS),
-            binascii.unhexlify(data.ARP_REQ),
+            binascii.unhexlify(core.ARP_HWT),
+            binascii.unhexlify(core.ARP_PRT),
+            binascii.unhexlify(core.ARP_HWS),
+            binascii.unhexlify(core.ARP_PRS),
+            binascii.unhexlify(core.ARP_REQ),
             binascii.unhexlify(snd_mac),
             socket.inet_aton(snd_ip),
-            binascii.unhexlify(data.ARP_TGT),
+            binascii.unhexlify(core.ARP_TGT),
             socket.inet_aton(tgt_ip)
         )

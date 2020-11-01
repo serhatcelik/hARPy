@@ -5,8 +5,9 @@
 """Module for handling exceptions."""
 
 import sys
-import harpy.core.data as data
-from harpy.core.data import with_red
+import harpy.data.core as core
+import harpy.data.functions as func
+from harpy.data.functions import with_red
 
 
 class ExceptionHandler:
@@ -15,30 +16,30 @@ class ExceptionHandler:
     def __init__(self, who=None):
         self.who = who  # Responsible for the error
 
-    def __call__(self, func):
+    def __call__(self, function):
         def wrapper(*args, **kwargs):
             try:
-                func(*args, **kwargs)
+                function(*args, **kwargs)
             except OSError as err:
                 # Operation not permitted
                 if err.args[0] == 1:
-                    sys.exit(self.with_who('run me as root'))
+                    sys.exit(with_red('run me as root'))
                 # Input/output error
                 elif err.args[0] == 5:
                     pass
                 # Bad file descriptor
                 elif err.args[0] == 9:
-                    data.ERRORS.add(self.with_who('problem with socket'))
+                    core.EXIT_MESSAGES.add(self.with_who('socket\n'))
                 # No such device
                 elif err.args[0] == 19:
-                    sys.exit(self.with_who('problem with network device'))
+                    sys.exit(self.with_who('network interface'))
                 # Network is down
                 elif err.args[0] == 100:
-                    data.ERRORS.add(self.with_who('problem with network'))
+                    core.EXIT_MESSAGES.add(self.with_who('network\n'))
                 else:
                     raise
 
-                data.run_main(False)
+                func.run_main(False)
 
         return wrapper
 
@@ -49,4 +50,4 @@ class ExceptionHandler:
         :param text: Text to be printed.
         """
 
-        return with_red('{}: {}'.format(self.who, text))
+        return with_red('%s: problem with %s' % (self.who, text))

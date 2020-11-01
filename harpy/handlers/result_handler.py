@@ -6,7 +6,7 @@
 
 import os
 import json
-import harpy.core.data as data
+import harpy.data.core as core
 
 
 class ResultHandler:
@@ -25,24 +25,25 @@ class ResultHandler:
 
     def __call__(self):
         if False not in [
-            self.arp_snd_mac in self.results, self.arp_snd_ip in self.results
+                self.arp_snd_mac in self.results,
+                self.arp_snd_ip in self.results
         ]:
-            for _ in range(0, len(self.results), data.MAIN_COL_NUM):
+            for _ in range(0, len(self.results), core.CONT_STP_NUM):
                 if False not in [
-                    self.arp_snd_ip == self.results[_],
-                    self.eth_src_mac == self.results[_ + 1],
-                    self.arp_snd_mac == self.results[_ + 2]
+                        self.arp_snd_ip == self.results[_],
+                        self.eth_src_mac == self.results[_ + 1],
+                        self.arp_snd_mac == self.results[_ + 2]
                 ]:
-                    if self.arp_opcode == data.ARP_REQ:
+                    if self.arp_opcode == core.ARP_REQ:
                         self.results[_ + 3] += 1  # ARP request count +1
-                    elif self.arp_opcode == data.ARP_REP:
+                    elif self.arp_opcode == core.ARP_REP:
                         self.results[_ + 4] += 1  # ARP reply count +1
                     return self.results
         self.results.append(self.arp_snd_ip)  # Sender IP address
         self.results.append(self.eth_src_mac)  # Source MAC address
         self.results.append(self.arp_snd_mac)  # Sender MAC address
-        self.results.append(1 if self.arp_opcode == data.ARP_REQ else 0)
-        self.results.append(1 if self.arp_opcode == data.ARP_REP else 0)
+        self.results.append(1 if self.arp_opcode == core.ARP_REQ else 0)
+        self.results.append(1 if self.arp_opcode == core.ARP_REP else 0)
         self.results.append(self.get_vendor(self.eth_src_mac))  # OUI
 
         return self.results
@@ -55,8 +56,8 @@ class ResultHandler:
         :param src_mac: Source MAC Address.
         """
 
-        if os.path.exists(data.VENDORS_FILE):
-            with open(data.VENDORS_FILE, 'r') as vendors_file:
+        if os.path.exists(core.VENDORS_FILE):
+            with open(core.VENDORS_FILE, 'r') as vendors_file:
                 try:
                     vendors = json.load(vendors_file)
                 except json.decoder.JSONDecodeError:

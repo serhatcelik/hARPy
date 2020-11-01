@@ -6,38 +6,38 @@
 
 import os
 import binascii
-import harpy.core.data as data
+import harpy.data.core as core
 
 
 class InterfaceHandler:
     """Handler of interfaces."""
 
     def __init__(self):
-        if os.path.isdir(data.SYS_PATH):
-            self.mems = {
-                _: 0 for _ in os.listdir(data.SYS_PATH)
+        if os.path.isdir(core.SYS_NET):
+            self.members = {
+                _: None for _ in os.listdir(core.SYS_NET)
             }  # All interfaces
 
-        for _ in self.mems:
+        for _ in self.members:
             if _ != 'lo':
-                carrier_file = os.path.join(data.SYS_PATH, _, 'carrier')
-                if os.path.isfile(carrier_file):
-                    with open(carrier_file, 'r') as carrier:
-                        self.mems[_] = int(carrier.readline(1))
+                operstate_file = os.path.join(core.SYS_NET, _, 'operstate')
+                if os.path.isfile(operstate_file):
+                    with open(operstate_file, 'r') as operstate:
+                        self.members[_] = operstate.read().strip().lower()
 
     def __call__(self):
-        for _ in self.mems:
+        for _ in self.members:
             # Interface up?
-            if self.mems[_]:
+            if self.members[_] == 'up':
                 return _
-        return False
+        return None
 
     @staticmethod
-    def get_mac(raw_soc):
+    def get_mac(l2soc):
         """
         Return an interface's MAC address.
 
-        :param raw_soc: Layer 2 RAW socket.
+        :param l2soc: Layer 2 RAW socket.
         """
 
-        return binascii.hexlify(raw_soc.getsockname()[-1]).decode('utf-8')
+        return binascii.hexlify(l2soc.getsockname()[-1]).decode('utf-8')
