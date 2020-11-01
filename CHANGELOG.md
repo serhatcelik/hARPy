@@ -1,3 +1,13 @@
+# hARPy v2020.11.1
+
+- Fixed an error that occurred when trying to run the program with no internet connection.
+- A command-line option that filters sniff results has been added.
+- Suspicious packets are now only shown in one column.
+- The UI has been improved.
+- Type less, do more.
+
+---
+
 # hARPy v2020.10.30.post1
 
 - Performance improvements.
