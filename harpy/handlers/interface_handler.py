@@ -6,17 +6,17 @@
 
 import os
 import binascii
-import harpy.data.core as core
+from harpy.data import variables as core
 
 
 class InterfaceHandler:
     """Handler of interfaces."""
 
+    members = dict()  # All interfaces
+
     def __init__(self):
         if os.path.isdir(core.SYS_NET):
-            self.members = {
-                _: None for _ in os.listdir(core.SYS_NET)
-            }  # All interfaces
+            self.members = {_: None for _ in os.listdir(core.SYS_NET)}
 
         for _ in self.members:
             if _ != 'lo':
@@ -27,7 +27,6 @@ class InterfaceHandler:
 
     def __call__(self):
         for _ in self.members:
-            # Interface up?
             if self.members[_] == 'up':
                 return _
         return None
@@ -35,7 +34,7 @@ class InterfaceHandler:
     @staticmethod
     def get_mac(l2soc):
         """
-        Return an interface's MAC address.
+        Return the MAC address of an interface.
 
         :param l2soc: Layer 2 RAW socket.
         """

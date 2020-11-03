@@ -5,8 +5,8 @@
 """Module for handling arguments obtained from the command-line."""
 
 import re
-import harpy.data.core as core
-from harpy.data.functions import with_red
+from harpy.data import variables as core
+from harpy.data import functions as func
 from harpy.handlers.interface_handler import InterfaceHandler
 
 
@@ -29,20 +29,20 @@ class ArgumentHandler:
         """
         Check the interface.
 
-        :param arg: Network interface to send/sniff packets.
+        :param arg: Network device to send/sniff packets.
         """
 
         if arg is None:
-            print(with_red('no carrier in, %s' % core.SYS_NET))
+            print(func.with_red('no carrier in, %s' % core.SYS_NET))
             return False
         if arg == 'lo':
-            print(with_red('do not use lo'))
+            print(func.with_red('do not use lo as an interface'))
             return False
         if arg not in InterfaceHandler().members:
-            print(with_red('no such network interface, %s' % arg))
+            print(func.with_red('no such interface, %s' % arg))
             return False
-        if InterfaceHandler().members[arg] != 'up':
-            print(with_red('network interface is in down state, %s' % arg))
+        if InterfaceHandler().members[arg] == 'down':
+            print(func.with_red('interface is in down state, %s' % arg))
             return False
         return True
 
@@ -62,14 +62,14 @@ class ArgumentHandler:
         """
         Check the range.
 
-        :param arg: Scan range, e.g. 192.168.2.1/24.
+        :param arg: Scanning range, e.g. 192.168.1.1/24.
         """
 
         octet = '([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])'  # [0, 255]
-        expression = fr'^({octet}\.{octet}\.{octet}\.{octet}/(8|16|24))$'
+        regex = fr'^({octet}\.{octet}\.{octet}\.{octet}/(8|16|24))$'
 
-        if not core.COMMANDS.p and not bool(re.search(expression, arg)):
-            print(with_red('scan range syntax is invalid, %s' % arg))
+        if core.COMMANDS.r is not None and not bool(re.search(regex, arg)):
+            print(func.with_red('incorrect scanning range, %s' % arg))
             return False
         return True
 

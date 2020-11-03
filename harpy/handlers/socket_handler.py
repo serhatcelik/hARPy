@@ -5,7 +5,7 @@
 """Module for handling sockets."""
 
 import socket
-import harpy.data.core as core
+from harpy.data import variables as core
 from harpy.handlers.exception_handler import ExceptionHandler
 
 
@@ -16,10 +16,10 @@ class SocketHandler:
     def __init__(self, protocol):
         self.l2soc = socket.socket(
             socket.PF_PACKET, socket.SOCK_RAW, socket.htons(protocol)
-        )
+        )  # Open a socket
 
     def set_options(self):
-        """Set socket options."""
+        """Set the socket options."""
 
         self.l2soc.setblocking(False)  # Non-blocking mode
         self.l2soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -30,7 +30,7 @@ class SocketHandler:
         """
         Bind the socket to an interface.
 
-        :param interface: Network interface to send/sniff packets.
+        :param interface: Network device to send/sniff packets.
         :param port: Port to bind to an interface.
         """
 

@@ -7,33 +7,28 @@
 import socket
 import struct
 import binascii
-import harpy.data.core as core
+from harpy.data import variables as core
 
 
 class PacketHandler:
     """Handler of packets."""
 
     @staticmethod
-    def create_eth_frame(src_mac):
-        """
-        Create an Ethernet frame.
-
-        :param src_mac: Source MAC address.
-        """
+    def create_eth_frame():
+        """Create an Ethernet frame."""
 
         return struct.pack(
             '!6s6s2s',
-            binascii.unhexlify(core.ETH_DST),
-            binascii.unhexlify(src_mac),
+            binascii.unhexlify(core.DST_MAC),
+            binascii.unhexlify(core.SRC_MAC),
             binascii.unhexlify(core.ETH_TYP)
         )
 
     @staticmethod
-    def create_arp_header(snd_mac, snd_ip, tgt_ip):
+    def create_arp_header(snd_ip, tgt_ip):
         """
         Create an ARP header.
 
-        :param snd_mac: Sender MAC address.
         :param snd_ip: Sender IP address.
         :param tgt_ip: Target IP address.
         """
@@ -45,8 +40,8 @@ class PacketHandler:
             binascii.unhexlify(core.ARP_HWS),
             binascii.unhexlify(core.ARP_PRS),
             binascii.unhexlify(core.ARP_REQ),
-            binascii.unhexlify(snd_mac),
+            binascii.unhexlify(core.SND_MAC),
             socket.inet_aton(snd_ip),
-            binascii.unhexlify(core.ARP_TGT),
+            binascii.unhexlify(core.TGT_MAC),
             socket.inet_aton(tgt_ip)
         )

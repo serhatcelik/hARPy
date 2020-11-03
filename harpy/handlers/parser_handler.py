@@ -5,7 +5,7 @@
 """Module for handling command-line arguments."""
 
 import argparse
-import harpy.data.core as core
+from harpy.data import variables as core
 from harpy.__version__ import __version__
 from harpy.__author__ import __author__, __email__, __gitlink__
 from harpy.handlers.argument_handler import ArgumentHandler
@@ -16,7 +16,7 @@ class ParserHandler:
     """Handler of command-line arguments."""
 
     @staticmethod
-    def add_arguments():
+    def create_arguments():
         """Create new command-line arguments."""
 
         parser = argparse.ArgumentParser(
@@ -35,11 +35,11 @@ class ParserHandler:
         )
         parser.add_argument(
             '-f', '--filter', action='store_true', dest='f',
-            help='filter sniff results using the given scan range'
+            help='filter sniff results using the given scanning range'
         )
         parser.add_argument(
             '-i', default=InterfaceHandler()(), metavar='interface', dest='i',
-            help='network interface to send/sniff packets'
+            help='network device to send/sniff packets'
         )
         parser.add_argument(
             '-l', '--log', action='version', version=core.DEV_LOG,
@@ -56,7 +56,7 @@ class ParserHandler:
         )
         parser.add_argument(
             '-r', metavar='range', dest='r',
-            help='scan range, e.g. 192.168.2.1/24 (valid: /8, /16, /24)'
+            help='scanning range, e.g. 192.168.1.1/24 (valid: /8, /16, /24)'
         )
         parser.add_argument(
             '-s', default=core.DEF_SLP, type=int, metavar='sleep', dest='s',
@@ -76,18 +76,16 @@ class ParserHandler:
         return parser
 
     @staticmethod
-    def check_arguments(commands):
-        """
-        Check the command-line arguments.
-
-        :param commands: Parsed command-line arguments.
-        """
+    def check_arguments():
+        """Check the command-line arguments."""
 
         return [
-            ArgumentHandler.count_handler(commands.c),
-            ArgumentHandler.interface_handler(commands.i),
-            ArgumentHandler.node_handler(commands.n),
-            ArgumentHandler.range_handler(commands.r),
-            ArgumentHandler.sleep_handler(commands.s),
-            ArgumentHandler.timeout_handler(commands.t)
+            ArgumentHandler.count_handler(core.COMMANDS.c),
+            ArgumentHandler.interface_handler(core.COMMANDS.i),
+            ArgumentHandler.node_handler(core.COMMANDS.n),
+            ArgumentHandler.range_handler(core.COMMANDS.r),
+            ArgumentHandler.sleep_handler(core.COMMANDS.s),
+            ArgumentHandler.timeout_handler(core.COMMANDS.t),
+            not (not core.COMMANDS.r and core.COMMANDS.f),
+            not (not core.COMMANDS.r and not core.COMMANDS.p),
         ]

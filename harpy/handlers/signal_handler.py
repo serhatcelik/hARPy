@@ -11,31 +11,36 @@ import threading
 class SignalHandler:
     """Handler of signals."""
 
-    def __init__(self, *signals):
-        self.signals = signals
+    def __init__(self, handler):
+        self.handler = handler
 
-    def enable(self, handler):
+    def catch(self, *signals):
         """
-        Enable the handler to capture incoming signals.
+        Catch the signals.
 
-        :param handler: Incoming signal handler.
+        :param signals: Signals to be caught.
         """
 
         if threading.current_thread() is threading.main_thread():
-            for _ in self.signals:
-                signal.signal(_, handler)
+            for _ in signals:
+                signal.signal(_, self.handler)
 
-    def disable(self):
-        """Disable the handler to ignore incoming signals."""
+    @staticmethod
+    def ignore(*signals):
+        """
+        Ignore the signals.
+
+        :param signals: Signals to be ignored.
+        """
 
         if threading.current_thread() is threading.main_thread():
-            # Be sure to disable the handler
+            # Be sure to ignore the signals
             while True:
                 try:
-                    for _ in self.signals:
+                    for _ in signals:
                         signal.signal(_, signal.SIG_IGN)
                     return
                 except TypeError:
-                    # Workaround for _thread.interrupt_main() bug
+                    # Workaround for the _thread.interrupt_main() bug
                     # ( https://bugs.python.org/issue23395 )
                     pass
