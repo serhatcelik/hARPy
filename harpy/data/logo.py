@@ -4,22 +4,17 @@
 
 """Functions for handling the program logo."""
 
-import re
-import harpy.data.core as core
+from harpy.data import variables as core
 
 
 def create_logo():
     """Create the logo for the program."""
 
     logo = [
-        r'{0}|_ {1} _  _ _ {0}  {2}'.format(core.BLUE, core.GREEN, core.RESET),
-        r'{0}| |{1}(_|| |_){0}\/{2}'.format(core.BLUE, core.GREEN, core.RESET),
-        r'{0}   {1}     |  {0}/ {2}'.format(core.BLUE, core.GREEN, core.RESET)
+        r'{1}|_ {2} _  _ _ {1}  {0}'.format(core.RESET, core.BLUE, core.GREEN),
+        r'{1}| |{2}(_|| |_){1}\/{0}'.format(core.RESET, core.BLUE, core.GREEN),
+        r'{1}   {2}     |  {1}/ {0}'.format(core.RESET, core.BLUE, core.GREEN)
     ]
-
-    setattr(
-        create_logo, 'logo_len', len(re.sub(core.ANSI_EXPRESSION, '', logo[0]))
-    )  # Remove ANSI escape sequences
 
     return logo
 
