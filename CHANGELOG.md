@@ -1,3 +1,11 @@
+# hARPy v
+
+- Fixed an error where the filter is invalid due to incorrectly entered scanning range.
+- Performance improvements.
+- The UI has been improved.
+
+---
+
 # hARPy v2020.11.1
 
 - Fixed an error that occurred when trying to run the program with no internet connection.
