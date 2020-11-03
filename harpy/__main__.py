@@ -10,8 +10,8 @@ import time
 import atexit
 import traceback
 import logging.handlers
-import harpy.data.core as core
-import harpy.data.functions as func
+from harpy.data import variables as core
+from harpy.data import functions as func
 from harpy.threads.send_thread import SendThread
 from harpy.threads.sniff_thread import SniffThread
 from harpy.handlers.echo_handler import EchoHandler
@@ -27,19 +27,19 @@ def terminator():
     """Terminate all threads."""
 
     # Disable the handler to prevent activating it again
-    SignalHandler(*core.SIGNALS).disable()
+    getattr(main, core.SIGNAL).ignore(*core.IGNORE_SIGNALS)
 
-    # Not hanged up?
-    while sys.stdout.isatty():
-        print('\n')
-        for _ in core.EXIT_MESSAGES:
-            print(_, end='')
-        print('cleaning...\n', flush=True)
-        break
+    for i, _ in enumerate(core.EXIT_MESSAGES):
+        # Not hanged up?
+        if sys.stdout.isatty():
+            print('\n\n' + _ if i == 0 else _)
+            # Last message?
+            if i == len(core.EXIT_MESSAGES) - 1:
+                print('cleaning...\n', flush=True)
 
     for i, _ in enumerate(core.THREADS):
         vars(main)[_].flag.set()
-        time_terminator = time.time()  # Restore for every thread
+        time_terminator = time.time()  # Restore for each thread
         while vars(main)[_].is_alive():
             # Still alive?
             if time.time() - time_terminator >= core.SLEEP_TERMINATOR:
@@ -56,93 +56,81 @@ def hard_terminator(*args):
     """
     Terminate all threads the hard way.
 
-    :param args: Container that contains type, value and traceback.
+    :param args: Container that stores type, value and traceback.
     """
 
     # Container full?
     if args:
         logger = logging.getLogger()
-        logger.addHandler(logging.handlers.SysLogHandler(address=core.DEV_LOG))
+        logger.addHandler(logging.handlers.SysLogHandler(core.DEV_LOG))
         logger.critical(traceback.format_exception(args[0], args[1], args[-1]))
 
     # atexit.register will not work when os._exit() is called, so...
-    EchoHandler().enable()
+    getattr(main, core.ECHO, EchoHandler()).enable()
     vars(os)['_exit'](34)  # Force to exit
 
 
 def main():
-    """Main function."""
+    """The main function."""
 
     sys.excepthook = hard_terminator
 
-    # Pipe used?
-    if False in [sys.stdin.isatty(), sys.stdout.isatty(), sys.stderr.isatty()]:
-        sys.exit(1)
-    # Background?
-    elif os.getpgrp() != os.tcgetpgrp(sys.stdout.fileno()):
-        sys.exit(1)
+    setattr(main, core.SIGNAL, SignalHandler(func.signal_handler))
+    vars(main)[core.SIGNAL].catch(*core.CATCH_SIGNALS)
+    vars(main)[core.SIGNAL].ignore(*core.IGNORE_SIGNALS)
 
-    SignalHandler(core.SIGHUP).enable(func.signal_handler)
-    SignalHandler(core.SIGCHLD).disable()
-    SignalHandler(core.SIGWINCH).disable()
-    SignalHandler(*core.SIGNALS).disable()
+    setattr(main, core.ECHO, EchoHandler())
+    atexit.register(vars(main)[core.ECHO].enable)
+    vars(main)[core.ECHO].disable()
 
-    # Register to enable the terminal echo at normal program termination
-    atexit.register(EchoHandler().enable)
-    EchoHandler().disable()
-
-    parser = ParserHandler.add_arguments()
+    setattr(main, core.PARSER, ParserHandler())
+    parser = vars(main)[core.PARSER].create_arguments()
     core.COMMANDS = parser.parse_args()
-    if True in [
-            not core.COMMANDS.p and not core.COMMANDS.r,
-            core.COMMANDS.f and not core.COMMANDS.r
-    ]:
+    if False in vars(main)[core.PARSER].check_arguments():
         sys.exit(parser.print_help())
-    elif False in ParserHandler.check_arguments(core.COMMANDS):
-        sys.exit(1)
 
-    setattr(main, core.SOCKET, SocketHandler(core.SOC_PRO))  # Open a socket
+    setattr(main, core.SOCKET, SocketHandler(core.SOC_PRO))
     vars(main)[core.SOCKET].set_options()
-    vars(main)[core.SOCKET].bind(interface=core.COMMANDS.i, port=core.SOC_POR)
+    vars(main)[core.SOCKET].bind(core.COMMANDS.i, core.SOC_POR)
 
-    core.ETH_SRC = InterfaceHandler.get_mac(vars(main)[core.SOCKET].l2soc)
-    core.ARP_SND = core.ETH_SRC
+    core.SRC_MAC = InterfaceHandler.get_mac(vars(main)[core.SOCKET].l2soc)
+    core.SND_MAC = core.SRC_MAC
     core.COMMANDS.r = func.new_range()
 
     setattr(main, core.SNIFF, SniffThread(vars(main)[core.SOCKET].l2soc))
     core.THREADS.append(vars(main)[core.SNIFF].name)
-    vars(main)[core.SNIFF].start()  # Start sniffing packets
+    vars(main)[core.SNIFF].start()  # Start sniffing the packets
 
     # Active mode?
     if not core.COMMANDS.p:
         setattr(main, core.SEND, SendThread(vars(main)[core.SOCKET].l2soc))
         core.THREADS.append(vars(main)[core.SEND].name)
-        vars(main)[core.SEND].start()  # Start sending packets
+        vars(main)[core.SEND].start()  # Start sending the packets
 
     while core.RUN_MAIN:
-        SignalHandler(*core.SIGNALS).disable()
-        window = WindowHandler(core.SNIFF_RESULTS)
+        vars(main)[core.SIGNAL].ignore(*core.IGNORE_SIGNALS)
+        setattr(main, core.WINDOW, WindowHandler(core.SNIFF_ALL))
         os.system('clear')
-        window.draw_skeleton()
-        window()
-        SignalHandler(*core.SIGNALS).enable(func.signal_handler)
+        vars(main)[core.WINDOW].draw_skeleton()
+        vars(main)[core.WINDOW]()
+        vars(main)[core.SIGNAL].catch(*core.CATCH_SIGNALS)
 
-        time_main = time.time()  # Restore after a certain period of time
+        time_main = time.time()
         while core.RUN_MAIN and time.time() - time_main < core.SLEEP_MAIN:
             func.run_main()
-            if core.SNIFF_RESULT:
-                core.SNIFF_RESULTS = ResultHandler(
-                    result=core.SNIFF_RESULT.pop(0),
-                    results=core.SNIFF_RESULTS
-                )()
+            if core.SNIFF_A:
+                setattr(main, core.RESULT, ResultHandler(core.SNIFF_A.pop(0)))
+                core.SNIFF_ALL = vars(main)[core.RESULT]()
 
 
-def multi_main():
-    """Main function for the setup script."""
+def setup_main():
+    """The main function for the setup script."""
 
-    main()
-    terminator()
+    if sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty():
+        if os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
+            main()
+            terminator()
 
 
 if __name__ == '__main__':
-    multi_main()
+    setup_main()

@@ -10,7 +10,7 @@ import threading
 
 def install_thread_excepthook():
     """
-    Workaround for sys.excepthook thread bug.
+    Workaround for the sys.excepthook thread bug.
     ( https://bugs.python.org/issue1230540 )
     """
 
