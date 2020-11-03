@@ -8,7 +8,7 @@ import time
 import socket
 import struct
 import threading
-import harpy.data.core as core
+from harpy.data import variables as core
 from harpy.handlers.packet_handler import PacketHandler
 from harpy.handlers.exception_handler import ExceptionHandler
 
@@ -19,10 +19,10 @@ class SendThread(threading.Thread):
     def __init__(self, l2soc):
         super().__init__()
 
+        self.l2soc = l2soc
+
         self.name = core.SEND
         self.flag = threading.Event()
-
-        self.l2soc = l2soc
 
         self.cnt = core.COMMANDS.c
         self.nod = core.COMMANDS.n
@@ -54,7 +54,7 @@ class SendThread(threading.Thread):
                 return
             tgt_ip = socket.inet_ntoa(struct.pack('!I', _))
             core.SEND_ADDRESS = tgt_ip
-            new_count = self.cnt  # Restore the original value at every step
+            new_count = self.cnt  # Restore the original at every step
             while not self.flag.is_set() and new_count > 0:
                 # Gratuitous ARP?
                 if int(tgt_ip.split('.')[-1]) == self.nod:
@@ -62,12 +62,8 @@ class SendThread(threading.Thread):
                 else:
                     snd_ip = '.'.join(tgt_ip.split('.')[0:3] + [str(self.nod)])
 
-                eth_frame = PacketHandler.create_eth_frame(core.ETH_SRC)
-                arp_header = PacketHandler.create_arp_header(
-                    snd_mac=core.ARP_SND,
-                    snd_ip=snd_ip,
-                    tgt_ip=tgt_ip
-                )
+                eth_frame = PacketHandler.create_eth_frame()
+                arp_header = PacketHandler.create_arp_header(snd_ip, tgt_ip)
 
                 try:
                     self.l2soc.send(eth_frame + arp_header)  # Send a packet
