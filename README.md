@@ -3,8 +3,8 @@
 - Suspicious packet detection.
 - Active or passive scanning option.
 - Ability to send packets from a fake IP address.
-- Ability to show number of hosts and ARP request/reply count.
 - Ability to filter sniff results with the given scanning range.
+- Ability to show number of hosts and ARP request/reply count.
 - Option to determine the amount of ARP requests to be sent.
 - Option to determine the sleep time between each ARP request.
 
