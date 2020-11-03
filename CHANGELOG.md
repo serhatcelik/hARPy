@@ -1,3 +1,9 @@
+# hARPy v2020.11.3.post1
+
+- Minor bug fixes.
+
+---
+
 # hARPy v2020.11.3
 
 - Fixed an error where the filter is invalid due to incorrectly entered scanning range.
