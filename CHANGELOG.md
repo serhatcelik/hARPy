@@ -1,3 +1,18 @@
+# hARPy v2020.11.21
+
+- Fixed the "Set changed size during iteration" error.
+- Fixed an error when trying to get the length of an inactive terminal.
+- Fixed an error that occurred when trying to close a socket that does not exist.
+- Performance improvements.
+- Added Python 3.4 and Python 3.5 support.
+- Fast mode function has been added.
+- Scanning range can now take multiple values.
+- Common IP addresses are now automatically scanned when no scanning range is specified.
+- The UI has been improved.
+- Type less, do more.
+
+---
+
 # hARPy v2020.11.3.post1
 
 - Minor bug fixes.
