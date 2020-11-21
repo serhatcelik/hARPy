@@ -1,130 +1,123 @@
-# This file is part of hARPy
+# This file is part of harpy
 # Released under the MIT license
 # Copyright (c) Serhat Çelik
 
 """hARPy -who uses ARP-: Active/passive ARP discovery tool."""
 
 import os
+import re
 import sys
 import time
 import atexit
 import traceback
-import logging.handlers
-from harpy.data import variables as core
-from harpy.data import functions as func
-from harpy.threads.send_thread import SendThread
-from harpy.threads.sniff_thread import SniffThread
-from harpy.handlers.echo_handler import EchoHandler
-from harpy.handlers.parser_handler import ParserHandler
-from harpy.handlers.result_handler import ResultHandler
-from harpy.handlers.signal_handler import SignalHandler
-from harpy.handlers.socket_handler import SocketHandler
-from harpy.handlers.window_handler import WindowHandler
-from harpy.handlers.interface_handler import InterfaceHandler
+import logging.config
+from harpy import data
+from harpy.data import run_main
+from harpy.threads import SendThread, SniffThread
+from harpy.handlers import (
+    EchoHandler, ExceptionHandler, InterfaceHandler, ParserHandler,
+    ResultHandler, SignalHandler, SocketHandler, WindowHandler,
+)
 
 
+@ExceptionHandler()
 def terminator():
-    """Terminate all threads."""
+    """Terminates all threads and closes the socket."""
 
     # Disable the handler to prevent activating it again
-    getattr(main, core.SIGNAL).ignore(*core.IGNORE_SIGNALS)
+    getattr(main, data.SIGNAL, SignalHandler()).ignore(*data.IGNORE_SIGNALS)
 
-    for i, _ in enumerate(core.EXIT_MESSAGES):
-        # Not hanged up?
-        if sys.stdout.isatty():
-            print('\n\n' + _ if i == 0 else _)
-            # Last message?
-            if i == len(core.EXIT_MESSAGES) - 1:
-                print('cleaning...\n', flush=True)
+    # Join first to prevent the "Set changed size during iteration" error
+    for _ in data.THREADS:
+        vars(main)[_].flag.set()  # Tell the thread to terminate itself
+        vars(main)[_].join()
 
-    for i, _ in enumerate(core.THREADS):
-        vars(main)[_].flag.set()
-        time_terminator = time.time()  # Restore for each thread
-        while vars(main)[_].is_alive():
-            # Still alive?
-            if time.time() - time_terminator >= core.SLEEP_TERMINATOR:
-                # Last thread?
-                if i == len(core.THREADS) - 1:
-                    hard_terminator()  # Force to exit without logging
-                else:
-                    break
+    if hasattr(main, data.SOCKET):
+        vars(main)[data.SOCKET].close()  # Close the socket
 
-    vars(main)[core.SOCKET].close()  # Close the socket
+    print("\n")
+    for _ in data.EXIT_MSGS:
+        print(_)
+    print(flush=True)
+
+    # Errors?
+    if any([re.search(data.RE_ANSI, _) for _ in data.EXIT_MSGS]):
+        sys.exit(1)
 
 
 def hard_terminator(*args):
     """
-    Terminate all threads the hard way.
+    Logs the exception and terminates all threads the hard way.
 
     :param args: Container that stores type, value and traceback.
     """
 
-    # Container full?
-    if args:
-        logger = logging.getLogger()
-        logger.addHandler(logging.handlers.SysLogHandler(core.DEV_LOG))
-        logger.critical(traceback.format_exception(args[0], args[1], args[-1]))
+    log_conf_file = os.path.join(os.path.dirname(__file__), "logging.conf")
+    logging.config.fileConfig(log_conf_file)
+    logger = logging.getLogger("harpy")
+    logger.critical("%s\n", traceback.format_exception(*args))  # pylint: disable=E1120
 
-    # atexit.register will not work when os._exit() is called, so...
-    getattr(main, core.ECHO, EchoHandler()).enable()
-    vars(os)['_exit'](34)  # Force to exit
+    # atexit.register will not work when os._exit is called, so...
+    getattr(main, data.ECHO, EchoHandler()).enable()
+    vars(os)["_exit"](34)  # Force to exit with code 34
 
 
 def main():
-    """The main function."""
+    setattr(main, data.SIGNAL, SignalHandler())
+    vars(main)[data.SIGNAL].catch(*data.CATCH_SIGNALS)
+    vars(main)[data.SIGNAL].ignore(*data.IGNORE_SIGNALS)
 
-    sys.excepthook = hard_terminator
+    setattr(main, data.ECHO, EchoHandler())
+    atexit.register(vars(main)[data.ECHO].enable)
+    vars(main)[data.ECHO].disable()
 
-    setattr(main, core.SIGNAL, SignalHandler(func.signal_handler))
-    vars(main)[core.SIGNAL].catch(*core.CATCH_SIGNALS)
-    vars(main)[core.SIGNAL].ignore(*core.IGNORE_SIGNALS)
+    setattr(main, data.PARSER, ParserHandler())
+    commands = vars(main)[data.PARSER].create_arguments()
+    vars(main)[data.PARSER].create_links(commands)
 
-    setattr(main, core.ECHO, EchoHandler())
-    atexit.register(vars(main)[core.ECHO].enable)
-    vars(main)[core.ECHO].disable()
+    if False in vars(main)[data.PARSER].check_arguments():
+        sys.exit(1)
 
-    setattr(main, core.PARSER, ParserHandler())
-    parser = vars(main)[core.PARSER].create_arguments()
-    core.COMMANDS = parser.parse_args()
-    if False in vars(main)[core.PARSER].check_arguments():
-        sys.exit(parser.print_help())
+    setattr(main, data.SOCKET, SocketHandler(data.SOC_PRO))
+    vars(main)[data.SOCKET].set_options()
+    vars(main)[data.SOCKET].bind(data.INT, data.SOC_POR)
 
-    setattr(main, core.SOCKET, SocketHandler(core.SOC_PRO))
-    vars(main)[core.SOCKET].set_options()
-    vars(main)[core.SOCKET].bind(core.COMMANDS.i, core.SOC_POR)
+    data.SRC_MAC = InterfaceHandler.get_mac(vars(main)[data.SOCKET].l2soc)
+    data.SND_MAC = data.SRC_MAC
 
-    core.SRC_MAC = InterfaceHandler.get_mac(vars(main)[core.SOCKET].l2soc)
-    core.SND_MAC = core.SRC_MAC
-    core.COMMANDS.r = func.new_range()
-
-    setattr(main, core.SNIFF, SniffThread(vars(main)[core.SOCKET].l2soc))
-    core.THREADS.append(vars(main)[core.SNIFF].name)
-    vars(main)[core.SNIFF].start()  # Start sniffing the packets
+    setattr(main, data.SNIFF, SniffThread(vars(main)[data.SOCKET].l2soc))
+    vars(main)[data.SNIFF].name = data.SNIFF
+    data.THREADS.append(vars(main)[data.SNIFF].name)
+    vars(main)[data.SNIFF].start()  # Start sniffing the packets
 
     # Active mode?
-    if not core.COMMANDS.p:
-        setattr(main, core.SEND, SendThread(vars(main)[core.SOCKET].l2soc))
-        core.THREADS.append(vars(main)[core.SEND].name)
-        vars(main)[core.SEND].start()  # Start sending the packets
+    if not data.PAS:
+        setattr(main, data.SEND, SendThread(vars(main)[data.SOCKET].l2soc))
+        vars(main)[data.SEND].name = data.SEND
+        data.THREADS.append(vars(main)[data.SEND].name)
+        vars(main)[data.SEND].start()  # Start sending the packets
 
-    while core.RUN_MAIN:
-        vars(main)[core.SIGNAL].ignore(*core.IGNORE_SIGNALS)
-        setattr(main, core.WINDOW, WindowHandler(core.SNIFF_ALL))
-        os.system('clear')
-        vars(main)[core.WINDOW].draw_skeleton()
-        vars(main)[core.WINDOW]()
-        vars(main)[core.SIGNAL].catch(*core.CATCH_SIGNALS)
+    time_timeout = time.time()  # Countdown start time
+    while data.RUN_MAIN:
+        vars(main)[data.SIGNAL].ignore(*data.IGNORE_SIGNALS)
+        setattr(main, data.WINDOW, WindowHandler(data.SNIFF_ALL))
+        os.system("clear")
+        vars(main)[data.WINDOW].draw_skeleton()
+        vars(main)[data.WINDOW]()
+        vars(main)[data.SIGNAL].catch(*data.CATCH_SIGNALS)
 
-        time_main = time.time()
-        while core.RUN_MAIN and time.time() - time_main < core.SLEEP_MAIN:
-            func.run_main()
-            if core.SNIFF_A:
-                setattr(main, core.RESULT, ResultHandler(core.SNIFF_A.pop(0)))
-                core.SNIFF_ALL = vars(main)[core.RESULT]()
+        time_main = time.time()  # Create a new one at every step
+        while data.RUN_MAIN and time.time() - time_main < data.WAIT_MAIN:
+            # Improve packet sending performance in other thread
+            time.sleep(.0001)
+            run_main(data.RUN_MAIN, time.time() - time_timeout >= data.TIM)
+            if data.SNIFF_A:
+                setattr(main, data.RESULT, ResultHandler(data.SNIFF_A.pop(0)))
+                data.SNIFF_ALL = vars(main)[data.RESULT](data.SNIFF_ALL)
 
 
-def setup_main():
-    """The main function for the setup script."""
+def setup_py_main():
+    sys.excepthook = hard_terminator
 
     if sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty():
         if os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
@@ -132,5 +125,5 @@ def setup_main():
             terminator()
 
 
-if __name__ == '__main__':
-    setup_main()
+if __name__ == "__main__":
+    setup_py_main()

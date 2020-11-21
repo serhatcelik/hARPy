@@ -1,4 +1,4 @@
-# This file is part of hARPy
+# This file is part of harpy
 # Released under the MIT license
 # Copyright (c) Serhat Çelik
 
