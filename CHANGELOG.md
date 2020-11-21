@@ -1,3 +1,9 @@
+# hARPy v2020.11.21.post1
+
+- Minor bug fixes.
+
+---
+
 # hARPy v2020.11.21
 
 - Fixed the "Set changed size during iteration" error.
