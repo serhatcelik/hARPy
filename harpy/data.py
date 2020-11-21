@@ -4,7 +4,7 @@
 
 """Global variables and functions for handling external modules."""
 
-VERSION = "2020.11.21"
+VERSION = "2020.11.21.post1"
 AUTHOR = "Serhat Çelik"
 AUTHOR_EMAIL = "prjctsrht@gmail.com"
 PROJECT_URL = "https://github.com/serhatcelik/harpy"

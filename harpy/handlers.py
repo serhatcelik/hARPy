@@ -402,12 +402,9 @@ class SignalHandler:
 
 class SocketHandler:
     def __init__(self, protocol):
-        try:
-            self.l2soc = socket.socket(
-                socket.PF_PACKET, socket.SOCK_RAW, socket.htons(protocol)
-            )  # Open a socket
-        except PermissionError:
-            sys.exit("Run me as superuser (a.k.a. root)")
+        self.l2soc = socket.socket(
+            socket.PF_PACKET, socket.SOCK_RAW, socket.htons(protocol)
+        )  # Open a socket
 
     def set_options(self):
         self.l2soc.setblocking(False)  # Non-blocking mode

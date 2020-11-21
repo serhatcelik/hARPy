@@ -63,6 +63,8 @@ def hard_terminator(*args):
 
 
 def main():
+    sys.excepthook = hard_terminator
+
     setattr(main, data.SIGNAL, SignalHandler())
     vars(main)[data.SIGNAL].catch(*data.CATCH_SIGNALS)
     vars(main)[data.SIGNAL].ignore(*data.IGNORE_SIGNALS)
@@ -117,12 +119,13 @@ def main():
 
 
 def setup_py_main():
-    sys.excepthook = hard_terminator
-
     if sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty():
         if os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
-            main()
-            terminator()
+            if os.getuid() == 0:
+                main()
+                terminator()
+            else:
+                sys.exit("Run me as superuser (a.k.a. root)")
 
 
 if __name__ == "__main__":
