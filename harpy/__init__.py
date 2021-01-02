@@ -1,3 +1,4 @@
+# coding=utf-8
 # This file is part of harpy
 # Released under the MIT license
 # Copyright (c) Serhat Çelik
@@ -10,8 +11,8 @@ import threading
 
 def install_thread_excepthook():
     """
-    Workaround for the sys.excepthook thread bug.
-    ( https://bugs.python.org/issue1230540 )
+    Workaround for sys.excepthook thread bug from:
+    https://bugs.python.org/issue1230540
     """
 
     init_original = threading.Thread.__init__
@@ -23,7 +24,7 @@ def install_thread_excepthook():
         def run(*args2, **kwargs2):
             try:
                 run_original(*args2, **kwargs2)
-            except:  # pylint: disable=W0702
+            except Exception:  # pylint: disable=W0703
                 sys.excepthook(*sys.exc_info())
 
         self.run = run

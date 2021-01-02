@@ -1,9 +1,9 @@
+# coding=utf-8
 # This file is part of harpy
 # Released under the MIT license
 # Copyright (c) Serhat Çelik
 
-"""Global handler classes to control external modules."""
-
+from __future__ import print_function
 import os
 import re
 import sys
@@ -11,25 +11,26 @@ import json
 import signal
 import socket
 import struct
+import inspect
 import termios
-import binascii
 import argparse
+import binascii
 import threading
+import subprocess
+from harpy import __version__
 from harpy import data
-from harpy.data import (
-    green, red, yellow, logo, banner, add_colons, add_dots, run_main,
-)
+from harpy.data import logo, banner, add_colons, add_dots, run_main
 
 
-class ExceptionHandler:
+class ExceptionHandler(object):
     def __init__(self, who=None):
-        self.who = who
+        self.who = who  # Responsible for the error
 
     def __call__(self, func):
         def wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
-            except (OSError, termios.error) as err:
+            except (IOError, OSError, socket.error, termios.error) as err:
                 # 5: Input/output error
                 if err.args[0] == 5:
                     pass
@@ -42,7 +43,7 @@ class ExceptionHandler:
                 else:
                     raise
 
-                run_main(False)
+            run_main(False)
 
         return wrapper
 
@@ -54,30 +55,36 @@ class ExceptionHandler:
         :param error: Error content.
         """
 
-        full_error = "[%s] %s" % (red("Errno %d" % errnum), error)
-
-        data.EXIT_MSGS.add("%s > %s" % (self.who, full_error))
+        data.EXIT_MSGS.add("%s -- [Errno %d] %s" % (self.who, errnum, error))
 
 
-class ArgumentHandler:
+class ArgumentHandler(object):
+    def __init__(self):
+        pass
+
     @staticmethod
-    def count_handler(arg):
-        if arg < data.MIN_CNT:
+    def count_handler(count):
+        if count < data.MIN_CNT:
             data.CNT = data.MIN_CNT
 
     @staticmethod
-    def interface_handler(arg):
-        if arg is False:
-            print("No carrier in, %s" % data.SYS_PATH)
+    @ExceptionHandler()
+    def interface_handler(interface):
+        if interface is False:
+            print("No available carrier in %s" % data.SYS_PATH)
+            sys.stdout.flush()
             return False
-        if arg == "lo":
-            print("lo > This is not an Ethernet interface")
+        if interface == "lo":
+            print("This is not an Ethernet interface -- %s" % interface)
+            sys.stdout.flush()
             return False
-        if arg not in InterfaceHandler().members:
-            print("%s > No such interface" % arg)
+        if interface not in InterfaceHandler().members:
+            print("No such interface -- %s" % interface)
+            sys.stdout.flush()
             return False
-        if InterfaceHandler().members[arg] == "down":
-            print("%s > Interface is in down state" % arg)
+        if InterfaceHandler().members[interface] != "up":
+            print("Interface is not available (dormant?) -- %s" % interface)
+            sys.stdout.flush()
             return False
         return True
 
@@ -85,39 +92,52 @@ class ArgumentHandler:
     def log_handler():
         if os.path.isfile(data.LOG_FILE):
             with open(data.LOG_FILE, "r") as log:
-                if log.read().strip():
-                    os.system("cat %s" % data.LOG_FILE)
-                    return False
-
-        print("No logs")
-
-        return False
+                return log.read()
+        return "No log"
 
     @staticmethod
-    def node_handler(arg):
-        if not data.MIN_NOD <= arg <= data.MAX_NOD:
+    def node_handler(node):
+        if not data.MIN_NOD <= node <= data.MAX_NOD:
             data.NOD = data.DEF_NOD
 
     @staticmethod
-    def passive_handler(arg):
-        # Passive mode?
-        if arg:
+    def passive_handler(passive):
+        if passive:
             # Fast mode only makes sense in active mode, so...
-            data.FST = False
+            data.FST = None
 
     @staticmethod
-    def range_handler(arg):
-        if arg is None:
+    @ExceptionHandler()
+    def range_handler(range_):
+        if range_ is None:
             # Filtering is only allowed if a scanning range is specified, so...
-            data.FLT = False
-            arg = data.RNG = data.DEF_RNG
+            data.FLT = None
+            # Repeat is only allowed if a scanning range is specified, so...
+            data.REP = None
+            range_ = data.RNG = data.DEF_RNG
 
-        octet = "([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"  # [0, 255]
-        expression = r"^({0}\.{0}\.{0}\.{0}/(8|16|24))$".format(octet)
+        # Do this only if the scanning range is different from the default
+        if range_ != data.DEF_RNG:
+            octet = "([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"
+            expression = r"^({0}\.{0}\.{0}\.{0}/(8|16|24))$".format(octet)
 
-        for _ in arg:
-            if not bool(re.search(expression, _)):
-                print("Problem with scanning range, %s" % _)
+            set_range_ = list()
+            # Remove repetitive scanning ranges
+            for _ in range_:
+                if _ not in set_range_:
+                    set_range_.append(_)
+            range_ = set_range_
+
+            problem = [_ for _ in range_ if not bool(re.search(expression, _))]
+            if problem:
+                print("Problem with scanning range/s --", end=" ")
+                for i, _ in enumerate(problem):
+                    # Last error?
+                    if i == len(problem) - 1:
+                        print(_)
+                    else:
+                        print(_, end=" ")
+                sys.stdout.flush()
                 return False
 
         data.RNG = [[
@@ -126,24 +146,24 @@ class ArgumentHandler:
             _.split(".")[2],
             _.split(".")[-1].split("/")[0],
             _.split(".")[-1].split("/")[-1],
-        ] for _ in arg]  # Convert the scanning range to list format
+        ] for _ in range_]  # Convert the scanning range to list format
 
         return True
 
     @staticmethod
-    def sleep_handler(arg):
-        if arg < data.MIN_SLP:
+    def sleep_handler(sleep):
+        if sleep < data.MIN_SLP:
             data.SLP = data.MIN_SLP
-        elif arg > data.MAX_SLP:
+        elif sleep > data.MAX_SLP:
             data.SLP = data.MAX_SLP
 
     @staticmethod
-    def timeout_handler(arg):
-        if arg < data.MIN_TIM:
+    def timeout_handler(timeout):
+        if timeout < data.MIN_TIM:
             data.TIM = data.MIN_TIM
 
 
-class EchoHandler:
+class EchoHandler(object):
     def __init__(self):
         self.descriptor = sys.stdin.fileno()
 
@@ -164,19 +184,30 @@ class EchoHandler:
         termios.tcsetattr(self.descriptor, termios.TCSANOW, new)
 
 
-class InterfaceHandler:
+class InterfaceHandler(object):
     members = dict()  # All interfaces
 
     def __init__(self):
-        if os.path.isdir(data.SYS_PATH):
-            self.members = {_: None for _ in os.listdir(data.SYS_PATH)}
+        if hasattr(socket, "if_nameindex"):
+            if_nameindex = socket.if_nameindex()  # pylint: disable=E1101
+            self.members = {_[-1]: None for _ in if_nameindex}
+        else:
+            if os.path.isdir(data.SYS_PATH):
+                self.members = {_: None for _ in os.listdir(data.SYS_PATH)}
 
         for _ in self.members:
             if _ != "lo":
                 operstate_file = os.path.join(data.SYS_PATH, _, "operstate")
                 if os.path.isfile(operstate_file):
                     with open(operstate_file, "r") as operstate:
-                        self.members[_] = operstate.read().strip().lower()
+                        try:
+                            self.members[_] = operstate.read().strip().lower()
+                        except (IOError, OSError) as err:
+                            # 22: Invalid argument
+                            if err.args[0] == 22:
+                                pass
+                            else:
+                                raise
 
     def __call__(self):
         for _ in self.members:
@@ -195,11 +226,12 @@ class InterfaceHandler:
         return binascii.hexlify(l2soc.getsockname()[-1]).decode("utf-8")
 
 
-class PacketHandler:
+class PacketHandler(object):
+    def __init__(self):
+        pass
+
     @staticmethod
     def create_eth_frame():
-        """Creates an Ethernet frame."""
-
         return struct.pack(
             "!6s6s2s",
             binascii.unhexlify(data.DST_MAC),
@@ -208,14 +240,7 @@ class PacketHandler:
         )
 
     @staticmethod
-    def create_arp_header(snd_ip, tgt_ip):
-        """
-        Creates an ARP header.
-
-        :param snd_ip: Sender IP address.
-        :param tgt_ip: Target IP address.
-        """
-
+    def create_arp_header():
         return struct.pack(
             "!2s2s1s1s2s6s4s6s4s",
             binascii.unhexlify(data.ARP_HWT),
@@ -224,35 +249,40 @@ class PacketHandler:
             binascii.unhexlify(data.ARP_PRS),
             binascii.unhexlify(data.ARP_REQ),
             binascii.unhexlify(data.SND_MAC),
-            socket.inet_aton(snd_ip),
+            socket.inet_aton(data.SND_IP),
             binascii.unhexlify(data.TGT_MAC),
-            socket.inet_aton(tgt_ip),
+            socket.inet_aton(data.TGT_IP),
         )
 
 
-class ParserHandler:
+class ParserHandler(object):
+    def __init__(self):
+        pass
+
     @staticmethod
     def create_arguments():
         parser = argparse.ArgumentParser(
-            prog="harpy", description="- Active/passive ARP discovery tool -",
-            epilog="Written by %s ( %s )" % (data.AUTHOR, data.PROJECT_URL),
+            prog="harpy",
+            description="hARPy - Active/passive ARP discovery tool\n"
+                        "Written by Serhat Çelik <prjctsrht@gmail.com>",
+            epilog="It is recommended that you enable passive mode on "
+                   "networks with heavy packet flow.\n"
+                   "See https://github.com/serhatcelik/harpy "
+                   "for more information.",
+            formatter_class=argparse.RawTextHelpFormatter,
         )
 
         parser.add_argument(
-            "-a", action="version", version=parser.epilog,
-            help="show program author information and exit",
-        )
-        parser.add_argument(
             "-c", default=data.DEF_CNT, type=int, metavar="count", dest="c",
-            help="number of times to send each request (def:%%(default)s"
-                 "|min:%d)" % data.MIN_CNT,
+            help="number of times to send each request "
+                 "(def:%%(default)s|min:%d)" % data.MIN_CNT,
         )
         parser.add_argument(
-            "-f", action="store_true", dest="f",
-            help="fast mode, only scan for specific hosts",
+            "-f", "--fast", action="store_true", dest="f",
+            help="enable fast mode, only scan for specific hosts",
         )
         parser.add_argument(
-            "-F", action="store_true", dest="F",
+            "-F", "--filter", action="store_true", dest="F",
             help="filter the sniff results using the given scanning range",
         )
         parser.add_argument(
@@ -260,33 +290,44 @@ class ParserHandler:
             help="network device to send/sniff packets",
         )
         parser.add_argument(
-            "-l", action="store_true", dest="l", help="show logs and exit",
+            "-l", "--log", action="version",
+            version=ArgumentHandler.log_handler(), help="show log and exit",
+        )
+        parser.add_argument(
+            "-L", "--license", version=inspect.cleandoc(data.__doc__),
+            action="version", help="show license and exit",
         )
         parser.add_argument(
             "-n", default=data.DEF_NOD, type=int, metavar="node", dest="n",
-            help="last ip octet to be used to send packets (def:%%(default)s"
-                 "|min:%d|max:%d)" % (data.MIN_NOD, data.MAX_NOD),
+            help="last ip octet to be used to send packets "
+                 "(def:%%(default)s|min:%d|max:%d)" % (data.MIN_NOD,
+                                                       data.MAX_NOD),
         )
         parser.add_argument(
-            "-p", action="store_true", dest="p",
-            help="passive mode, do not send any packets",
+            "-p", "--passive", action="store_true", dest="p",
+            help="enable passive mode, do not send any packets",
         )
         parser.add_argument(
             "-r", nargs="+", metavar="range", dest="r", help="scanning range",
         )
         parser.add_argument(
+            "-R", "--repeat", action="store_true", dest="R",
+            help="enable repeat mode, never stop sending packets"
+        )
+        parser.add_argument(
             "-s", default=data.DEF_SLP, type=int, metavar="time", dest="s",
-            help="time to sleep between each request in ms (def:%%(default)s"
-                 "|min:%d|max:%d)" % (data.MIN_SLP, data.MAX_SLP),
+            help="time to sleep between each request in ms "
+                 "(def:%%(default)s|min:%d|max:%d)" % (data.MIN_SLP,
+                                                       data.MAX_SLP),
         )
         parser.add_argument(
-            "-t", default=data.DEF_TIM, type=int, metavar="time", dest="t",
-            help="timeout to stop scanning in sec (def:%%(default)s"
-                 "|min:%d)" % data.MIN_TIM,
+            "-t", default=data.DEF_TIM, type=int, metavar="timeout", dest="t",
+            help="timeout to stop scanning in sec "
+                 "(def:%%(default)s|min:%d)" % data.MIN_TIM,
         )
         parser.add_argument(
-            "-v", action="version", version="v" + data.VERSION,
-            help="show program version and exit",
+            "-v", "--version", version="v" + __version__.VERSION,
+            action="version", help="show program version and exit",
         )
 
         return parser.parse_args()
@@ -303,10 +344,10 @@ class ParserHandler:
         data.FST = commands.f
         data.FLT = commands.F
         data.INT = commands.i
-        data.LOG = commands.l
         data.NOD = commands.n
         data.PAS = commands.p
         data.RNG = commands.r
+        data.REP = commands.R
         data.SLP = commands.s
         data.TIM = commands.t
 
@@ -320,87 +361,94 @@ class ParserHandler:
             ArgumentHandler.range_handler(data.RNG),
             ArgumentHandler.sleep_handler(data.SLP),
             ArgumentHandler.timeout_handler(data.TIM),
-        ] if not data.LOG else [ArgumentHandler.log_handler()]
+        ]
 
 
-class ResultHandler:
-    def __init__(self, result):
-        self.snd_ip = result[0]
-        self.src_mac = result[1]
-        self.snd_mac = result[2]
-        self.arp_opc = result[3]
+class ResultHandler(object):
+    snd_ip = None
+    src_mac = None
+    snd_mac = None
+    arp_opc = None
+
+    def __init__(self):
+        self.ouis = self.with_ouis()  # Get OUI database
 
     def __call__(self, results):
-        if self.snd_ip in results:
-            for _ in range(0, len(results), data.CONT_STP_SIZ):
-                if all([
-                        self.snd_ip == results[_],
-                        self.src_mac == results[_ + 1],
-                        self.snd_mac == results[_ + 2],
-                ]):
-                    if self.arp_opc != data.ARP_REQ:
-                        results[_ + 3] += 1
-                    else:
-                        results[_ + 4] += 1
-                    return results
+        for _ in range(0, len(results), data.CONT_STP_SIZ):
+            if (self.snd_ip in results) and (self.snd_ip == results[_]):
+                if self.src_mac == results[_ + 1]:
+                    if self.snd_mac == results[_ + 2]:
+                        if self.arp_opc != data.ARP_REQ:
+                            results[_ + 3] += 1
+                        else:
+                            results[_ + 4] += 1
+                        return results
 
         results.append(self.snd_ip)  # Sender IP address
         results.append(self.src_mac)  # Source MAC address
         results.append(self.snd_mac)  # Sender MAC address
         results.append(1 if self.arp_opc != data.ARP_REQ else 0)  # Reply
         results.append(1 if self.arp_opc == data.ARP_REQ else 0)  # Request
-        results.append(self.get_vendor(self.src_mac))  # Vendor
+        results.append(self.get_vendor(self.src_mac))  # Ethernet vendor
+        results.append(self.get_vendor(self.snd_mac))  # ARP vendor
 
         return results
 
     @staticmethod
-    def get_vendor(mac):
+    def with_ouis():
+        """Obtains the contents of the file that contains OUIs."""
+
+        ouis_file = os.path.join(os.path.dirname(__file__), "ouis.json")
+        if os.path.isfile(ouis_file):
+            with open(ouis_file, "r") as ouis:
+                try:
+                    return json.load(ouis)
+                except ValueError:
+                    pass
+        return None
+
+    def get_vendor(self, mac):
         """
         Finds a vendor using the given MAC address.
 
         :param mac: MAC address to find the vendor.
         """
 
-        vendors_file = os.path.join(os.path.dirname(__file__), "ouis.json")
-        if os.path.isfile(vendors_file):
-            with open(vendors_file, "r") as vendors:
-                try:
-                    ouis = json.load(vendors)
-                except json.decoder.JSONDecodeError:
-                    return ""
-            if mac[:6] not in ouis:
-                return "unknown"
-            return ouis[mac[:6]]
+        if self.ouis is not None:
+            if mac[:6] in self.ouis:
+                # Prevent the "ordinal not in range(128)" error in 2.7
+                # Also prevent for incorrect measurement of text length
+                return self.ouis[mac[:6]].encode("ascii", "ignore").decode()
         return ""
 
 
-class SignalHandler:
-    @staticmethod
-    def __call__(_signum, _frame):
+class SignalHandler(object):
+    def __init__(self):
+        self.main_thread = vars(threading)["_MainThread"]
+
+    def __call__(self, _signum, _frame):
         data.EXIT_MSGS.add("Exiting, received signal %d" % _signum)
         run_main(False)
 
     def catch(self, *signals):
-        if threading.current_thread() is threading.main_thread():
+        if isinstance(threading.current_thread(), self.main_thread):
             for _ in signals:
                 signal.signal(_, self.__call__)
 
-    @staticmethod
-    def ignore(*signals):
-        if threading.current_thread() is threading.main_thread():
-            # Be sure to ignore the signals
-            while True:
-                try:
-                    for _ in signals:
-                        signal.signal(_, signal.SIG_IGN)
-                    return
-                except TypeError:
-                    # Workaround for the _thread.interrupt_main bug
-                    # ( https://bugs.python.org/issue23395 )
-                    continue
+    def ignore(self, *signals):
+        # Be sure to ignore the signals
+        while isinstance(threading.current_thread(), self.main_thread):
+            try:
+                for _ in signals:
+                    signal.signal(_, signal.SIG_IGN)
+                return
+            except TypeError:
+                # Workaround for _thread.interrupt_main bug from:
+                # https://bugs.python.org/issue23395
+                pass
 
 
-class SocketHandler:
+class SocketHandler(object):
     def __init__(self, protocol):
         self.l2soc = socket.socket(
             socket.PF_PACKET, socket.SOCK_RAW, socket.htons(protocol)
@@ -426,13 +474,13 @@ class SocketHandler:
         self.l2soc.close()
 
 
-class WindowHandler:
+class WindowHandler(object):
     logo = logo()
-    logo_len = len(re.sub(data.RE_ANSI, "", logo[0]))
-    logo_space_len = data.MAX_IP_LEN - logo_len
 
     def __init__(self, results):
         self.results = results
+
+        self.col_length = self.get_column_length()
 
         self.banner = banner()
         self.banner_results = [
@@ -453,37 +501,48 @@ class WindowHandler:
             arp_rep = str(self.results[_ + 3])
             rep_space_len = data.MAX_REP_LEN - len(arp_rep)
             # Prevent column distortion
-            arp_rep = data.MAX_REP_LEN * "9" if rep_space_len < 0 else arp_rep
+            arp_rep = str(float("inf")) if rep_space_len < 0 else arp_rep
             arp_req = str(self.results[_ + 4])
             req_space_len = data.MAX_REQ_LEN - len(arp_req)
-            arp_req = data.MAX_REQ_LEN * "9" if req_space_len < 0 else arp_req
-            vendor = self.results[_ + 5]
+            arp_req = str(float("inf")) if req_space_len < 0 else arp_req
+            eth_vendor = self.results[_ + 5]
+            arp_vendor = self.results[_ + 6]
 
-            print(ip_address.ljust(data.MAX_IP_LEN), end=" | ")
             # Suspicious packet?!
             if eth_mac_address != arp_mac_address:
                 if data.ETHER_TO_ARP:
-                    eth_mac_address = yellow(arp_mac_address) + "?"
+                    mac_address = arp_mac_address + "!"
+                    vendor = arp_vendor
                 else:
-                    eth_mac_address = yellow(eth_mac_address) + "?"
-            print(eth_mac_address.ljust(data.MAX_MAC_LEN), end=" | ")
-            print(arp_rep.ljust(data.MAX_REP_LEN), end=" | ")
-            print(arp_req.ljust(data.MAX_REQ_LEN), end=" | ")
-            vendor = add_dots(vendor, self.get_column_size(), data.MAX_ALL_LEN)
-            print(vendor + data.RESET, flush=True)
+                    mac_address = eth_mac_address + "!"
+                    vendor = eth_vendor
+            else:
+                mac_address = eth_mac_address
+                vendor = eth_vendor
+
+            print(ip_address.ljust(data.MAX_IP_LEN), end=data.SEPARATOR)
+            print(mac_address.ljust(data.MAX_MAC_LEN), end=data.SEPARATOR)
+            print(arp_rep.ljust(data.MAX_REP_LEN), end=data.SEPARATOR)
+            print(arp_req.ljust(data.MAX_REQ_LEN), end=data.SEPARATOR)
+            vendor = add_dots(vendor, self.col_length, data.MAX_ALL_LEN)
+            print(vendor)
+            sys.stdout.flush()
 
     @staticmethod
     @ExceptionHandler()
-    def get_column_size():
-        return os.get_terminal_size().columns
+    def get_column_length():
+        if hasattr(os, "get_terminal_size"):
+            return os.get_terminal_size().columns  # pylint: disable=E1101
+        return int(subprocess.check_output(["tput", "cols"]).strip())
 
     @ExceptionHandler()
     def draw_a_line(self):
-        print(self.get_column_size() * "-", flush=True)
+        print(self.col_length * "-")
+        sys.stdout.flush()
 
     @staticmethod
     @ExceptionHandler()
-    def draw_row(*args):
+    def draw_a_row(*args):
         """
         Draw a row for the result window.
 
@@ -493,18 +552,20 @@ class WindowHandler:
         for i, _ in enumerate(args):
             # Last column?
             if i == len(args) - 1:
-                print(_, flush=True)
+                print(_)
+                sys.stdout.flush()
             else:
-                print(_, end=" | ")
+                print(_, end=data.SEPARATOR)
 
     @ExceptionHandler()
     def draw_skeleton(self):
         #################
         # Logo & Banner #
         #################
-        for i, _ in enumerate(self.logo):
-            print(_ + self.logo_space_len * " ", end=" | ")
-            print(self.banner[i], flush=True)
+        for i, j in zip(self.logo, self.banner):
+            print(i + ((data.MAX_IP_LEN - len(i)) * " "), end=data.SEPARATOR)
+            print(j)
+        sys.stdout.flush()
 
         ######################
         # MAC Address Column #
@@ -514,17 +575,19 @@ class WindowHandler:
         ########
         # Rows #
         ########
-        if data.SEND_FINISHED:
-            info_col = green("Sending finished")
-        elif data.SEND_ADDRESS is None:
+        if data.TGT_IP is None:
             info_col = ""
+        elif data.TGT_IP is False:
+            info_col = "Sending finished"
         else:
-            info_col = "Sending %s" % data.SEND_ADDRESS
+            info_col = "Sending .%d -> %s" % (data.NOD, data.TGT_IP)
+            if data.REP:
+                info_col = "R/" + info_col
 
         self.draw_a_line()
-        self.draw_row("Exit with ^C".ljust(data.MAX_IP_LEN), info_col)
+        self.draw_a_row("Ctrl+C to exit".ljust(data.MAX_IP_LEN), info_col)
         self.draw_a_line()
-        self.draw_row(
+        self.draw_a_row(
             "IP Address".ljust(data.MAX_IP_LEN),
             "MAC Address".ljust(data.MAX_MAC_LEN),
             "Reply".ljust(data.MAX_REP_LEN),

@@ -1,34 +1,37 @@
+# coding=utf-8
 # This file is part of harpy
 # Released under the MIT license
 # Copyright (c) Serhat Çelik
 
 """hARPy -who uses ARP-: Active/passive ARP discovery tool."""
 
+from __future__ import print_function
 import os
-import re
 import sys
 import time
 import atexit
 import traceback
+import subprocess
 import logging.config
 from harpy import data
 from harpy.data import run_main
 from harpy.threads import SendThread, SniffThread
-from harpy.handlers import (
-    EchoHandler, ExceptionHandler, InterfaceHandler, ParserHandler,
-    ResultHandler, SignalHandler, SocketHandler, WindowHandler,
-)
+from harpy.handlers import (ExceptionHandler, EchoHandler, InterfaceHandler,
+                            ParserHandler, ResultHandler, SignalHandler,
+                            SocketHandler, WindowHandler)
 
 
 @ExceptionHandler()
 def terminator():
     """Terminates all threads and closes the socket."""
 
+    data.CATCH_SIGNALS = list()  # No more catch
+    data.IGNORE_SIGNALS = data.CATCHABLE_SIGNALS  # Update to ignore all
     # Disable the handler to prevent activating it again
     getattr(main, data.SIGNAL, SignalHandler()).ignore(*data.IGNORE_SIGNALS)
 
     # Join first to prevent the "Set changed size during iteration" error
-    for _ in data.THREADS:
+    for _ in getattr(main, "threads", list()):
         vars(main)[_].flag.set()  # Tell the thread to terminate itself
         vars(main)[_].join()
 
@@ -38,11 +41,8 @@ def terminator():
     print("\n")
     for _ in data.EXIT_MSGS:
         print(_)
-    print(flush=True)
-
-    # Errors?
-    if any([re.search(data.RE_ANSI, _) for _ in data.EXIT_MSGS]):
-        sys.exit(1)
+    sys.stdout.flush()
+    sys.exit(1)
 
 
 def hard_terminator(*args):
@@ -55,10 +55,12 @@ def hard_terminator(*args):
     log_conf_file = os.path.join(os.path.dirname(__file__), "logging.conf")
     logging.config.fileConfig(log_conf_file)
     logger = logging.getLogger("harpy")
-    logger.critical("%s\n", traceback.format_exception(*args))  # pylint: disable=E1120
+    logger.error("%s\n", traceback.format_exception(args[0], args[1], args[2]))
 
     # atexit.register will not work when os._exit is called, so...
     getattr(main, data.ECHO, EchoHandler()).enable()
+    if hasattr(main, data.SOCKET):
+        vars(main)[data.SOCKET].close()
     vars(os)["_exit"](34)  # Force to exit with code 34
 
 
@@ -89,39 +91,49 @@ def main():
 
     setattr(main, data.SNIFF, SniffThread(vars(main)[data.SOCKET].l2soc))
     vars(main)[data.SNIFF].name = data.SNIFF
-    data.THREADS.append(vars(main)[data.SNIFF].name)
+    # Create a container to store all threads and then store one
+    setattr(main, "threads", [vars(main)[data.SNIFF].name])
     vars(main)[data.SNIFF].start()  # Start sniffing the packets
 
     # Active mode?
     if not data.PAS:
         setattr(main, data.SEND, SendThread(vars(main)[data.SOCKET].l2soc))
         vars(main)[data.SEND].name = data.SEND
-        data.THREADS.append(vars(main)[data.SEND].name)
+        vars(main)["threads"].append(vars(main)[data.SEND].name)
         vars(main)[data.SEND].start()  # Start sending the packets
+
+    # This line is not in loop for performance
+    setattr(main, data.RESULT, ResultHandler())
 
     time_timeout = time.time()  # Countdown start time
     while data.RUN_MAIN:
         vars(main)[data.SIGNAL].ignore(*data.IGNORE_SIGNALS)
-        setattr(main, data.WINDOW, WindowHandler(data.SNIFF_ALL))
-        os.system("clear")
+        setattr(main, data.WINDOW, WindowHandler(data.RESULT_ALL))
+        subprocess.call(["clear"])  # Better than os.system
         vars(main)[data.WINDOW].draw_skeleton()
         vars(main)[data.WINDOW]()
         vars(main)[data.SIGNAL].catch(*data.CATCH_SIGNALS)
 
         time_main = time.time()  # Create a new one at every step
-        while data.RUN_MAIN and time.time() - time_main < data.WAIT_MAIN:
+        while data.RUN_MAIN and ((time.time() - time_main) < data.WAIT_MAIN):
+            run_main(data.RUN_MAIN, (time.time() - time_timeout) >= data.TIM)
+
             # Improve packet sending performance in other thread
-            time.sleep(.0001)
-            run_main(data.RUN_MAIN, time.time() - time_timeout >= data.TIM)
-            if data.SNIFF_A:
-                setattr(main, data.RESULT, ResultHandler(data.SNIFF_A.pop(0)))
-                data.SNIFF_ALL = vars(main)[data.RESULT](data.SNIFF_ALL)
+            time.sleep(float(1) / 100)  # Float division for 2.7
+
+            if data.RESULT_A:
+                result = data.RESULT_A.pop(0)
+                vars(main)[data.RESULT].snd_ip = result[0]
+                vars(main)[data.RESULT].src_mac = result[1]
+                vars(main)[data.RESULT].snd_mac = result[2]
+                vars(main)[data.RESULT].arp_opc = result[3]
+                data.RESULT_ALL = vars(main)[data.RESULT](data.RESULT_ALL)
 
 
 def setup_py_main():
     if sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty():
         if os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
-            if os.getuid() == 0:
+            if os.geteuid() == 0:
                 main()
                 terminator()
             else:
