@@ -42,7 +42,7 @@ Sends ARP (Address Resolution Protocol) requests (active mode only) for discover
 
 > For Python version 3 (recommended)
 
-```shell
+```
 # pip3 install --upgrade pip
 # pip3 install --upgrade setuptools
 # pip3 install --upgrade harpy-prjct
@@ -50,7 +50,7 @@ Sends ARP (Address Resolution Protocol) requests (active mode only) for discover
 
 > For Python version 2
 
-```shell
+```
 # curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 # python2 get-pip.py
 # pip2 install --upgrade pip
@@ -60,7 +60,7 @@ Sends ARP (Address Resolution Protocol) requests (active mode only) for discover
 
 If you want to use the program by downloading directly from GitHub without installing it from PyPI, do the following:
 
-```shell
+```
 # git clone https://github.com/serhatcelik/harpy.git
 # cd harpy
 # python3 -m harpy --help
@@ -68,11 +68,11 @@ If you want to use the program by downloading directly from GitHub without insta
 
 ## Usage
 
-```shell
+```
 # harpy --help
 ```
 
-```text
+```
 usage: harpy [-h] [-c count] [-f] [-F] [-i interface] [-l] [-L] [-n node] [-p]
              [-r range [range ...]] [-R] [-s time] [-t timeout] [-v]
 
@@ -103,25 +103,25 @@ See https://github.com/serhatcelik/harpy for more information.
 
 > Active scanning for common IP addresses in fast mode
 
-```shell
+```
 # harpy -f
 ```
 
 > Passive scanning on eth0
 
-```shell
+```
 # harpy -i eth0 -p
 ```
 
 > Scan a fixed range with a count value of 2
 
-```shell
+```
 # harpy -r 192.168.0.1/24 -c 2
 ```
 
 > Scan some fixed ranges with filtering
 
-```shell
+```
 # harpy -r 172.16.0.1/16 10.0.0.1/8 -F
 ```
 
