@@ -1,114 +1,134 @@
-```
-|_  _  _ _      | Fast   : False     | Hosts   : 0
-| |(_|| |_)\/   | Filter : False     | Replies : 0
-        |  /    | Passive: True      | Requests: 0
-------------------------------------------------------------------------
-Exit with ^C    |
-------------------------------------------------------------------------
-IP Address      | MAC Address        | Reply   | Request | Vendor
-------------------------------------------------------------------------
+# hARPy
 
-```
+Active/passive ARP discovery tool.
 
-# Features
+## How It Works
 
-- Suspicious packet detection.
-- Active (fast or normal) or passive scanning option.
-- Ability to send packets from a fake IP address.
-- Ability to filter the results using the given scanning range.
-- Ability to show number of hosts and ARP reply/request count.
-- Option to determine the amount of ARP requests to be sent.
-- Option to determine the sleep time between each ARP request.
+Sends ARP (Address Resolution Protocol) requests (active mode only) for discovering the link layer addresses and sniffs for ARP replies.
 
-# Supported OSs
+## Features
+
+- Supports...
+    - ...Python version 3 (3.4, 3.5, 3.6, 3.7, 3.8, 3.9),
+    - ...Python version 2 (2.7).
+- Ability to...
+    - ...detect suspicious packets during scanning,
+    - ...scan active (normal or fast) or passive,
+    - ...scan more than one range at the same time,
+    - ...filter the results using the given scanning range,
+    - ...send packets from a fake IP address,
+    - ...show number of hosts and ARP reply/request counts.
+- Option to determine...
+    - ...the amount of ARP requests to be sent,
+    - ...the sleep time between each ARP request.
+
+## Tested OSs
 
 - GNU/Linux
+    - Kali Linux
+        - 2020.4
+        - 2020.3
+    - Linux Mint
+        - 20 "Ulyana"
+    - openSUSE
+        - Leap
+            - 15.2
+    - Pardus
+        - 19.4
+    - Ubuntu
+        - 20.04.1 LTS
 
-# Tested Distributions
+## Preparation & Installation
 
-- Kali Linux 2020.3
-- Linux Mint 20 Ulyana
-- openSUSE Leap 15.2
-- Pardus 19.4
-- Ubuntu 20.04.1 LTS
+> For Python version 3 (recommended)
 
-# Preparation
-
-> apt (Ubuntu, Debian)
-```
-# apt update
-# apt install python3 python3-pip
-```
-
-> zypper (openSUSE)
-```
-# zypper refresh
-# zypper install python3 python3-pip
-```
-
-# Installation
-
-```
-# pip3 install harpy-prjct
+```shell
+# pip3 install --upgrade pip
+# pip3 install --upgrade setuptools
+# pip3 install --upgrade harpy-prjct
 ```
 
-# Upgrade
+> For Python version 2
 
-```
-# pip3 install harpy-prjct --upgrade
+```shell
+# curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+# python2 get-pip.py
+# pip2 install --upgrade pip
+# pip2 install --upgrade setuptools
+# pip2 install --upgrade harpy-prjct
 ```
 
-# Usage
+If you want to use the program by downloading directly from GitHub without installing it from PyPI, do the following:
 
+```shell
+# git clone https://github.com/serhatcelik/harpy.git
+# cd harpy
+# python3 -m harpy --help
 ```
-# harpy -h
-```
-```
-usage: harpy [-h] [-a] [-c count] [-f] [-F] [-i interface] [-l] [-n node] [-p]
-             [-r range [range ...]] [-s time] [-t time] [-v]
 
-- Active/passive ARP discovery tool -
+## Usage
+
+```shell
+# harpy --help
+```
+
+```text
+usage: harpy [-h] [-c count] [-f] [-F] [-i interface] [-l] [-L] [-n node] [-p]
+             [-r range [range ...]] [-R] [-s time] [-t timeout] [-v]
+
+hARPy - Active/passive ARP discovery tool
+Written by Serhat Çelik <prjctsrht@gmail.com>
 
 optional arguments:
   -h, --help            show this help message and exit
-  -a                    show program author information and exit
   -c count              number of times to send each request (def:1|min:1)
-  -f                    fast mode, only scan for specific hosts
-  -F                    filter the sniff results using the given scanning range
+  -f, --fast            enable fast mode, only scan for specific hosts
+  -F, --filter          filter the sniff results using the given scanning range
   -i interface          network device to send/sniff packets
-  -l                    show logs and exit
+  -l, --log             show log and exit
+  -L, --license         show license and exit
   -n node               last ip octet to be used to send packets (def:43|min:2|max:253)
-  -p                    passive mode, do not send any packets
+  -p, --passive         enable passive mode, do not send any packets
   -r range [range ...]  scanning range
-  -s time               time to sleep between each request in ms (def:3|min:3|max:1000)
-  -t time               timeout to stop scanning in sec (def:inf|min:10)
-  -v                    show program version and exit
+  -R, --repeat          enable repeat mode, never stop sending packets
+  -s time               time to sleep between each request in ms (def:3|min:2|max:1000)
+  -t timeout            timeout to stop scanning in sec (def:inf|min:10)
+  -v, --version         show program version and exit
 
-Written by Serhat Çelik ( https://github.com/serhatcelik/harpy )
+It is recommended that you enable passive mode on networks with heavy packet flow.
+See https://github.com/serhatcelik/harpy for more information.
 ```
 
-# Examples
+## Examples
 
 > Active scanning for common IP addresses in fast mode
-```
+
+```shell
 # harpy -f
 ```
 
 > Passive scanning on eth0
-```
+
+```shell
 # harpy -i eth0 -p
 ```
 
 > Scan a fixed range with a count value of 2
-```
+
+```shell
 # harpy -r 192.168.0.1/24 -c 2
 ```
 
 > Scan some fixed ranges with filtering
-```
+
+```shell
 # harpy -r 172.16.0.1/16 10.0.0.1/8 -F
 ```
 
-# Contact
+## License
 
-If you find a bug or have a suggestion, please consider to mail me at <prjctsrht@gmail.com>
+[MIT](https://choosealicense.com/licenses/mit/)
+
+## Feedback
+
+If you have found a bug or have a suggestion, please consider mailing me at <prjctsrht@gmail.com>

@@ -1,21 +1,20 @@
+# coding=utf-8
+
 import setuptools
-from harpy import data
 
 with open("README.md", "r") as readme:
     long_description = readme.read()
 
 setuptools.setup(
     name="harpy-prjct",
-    version=data.VERSION,
-    author=data.AUTHOR,
-    author_email=data.AUTHOR_EMAIL,
-    url=data.PROJECT_URL,
-    project_urls={
-        "Source Code": data.PROJECT_URL,
-    },
+    version=__import__("harpy.__version__", fromlist="__version__").VERSION,
     description="Active/passive ARP discovery tool",
     long_description=long_description,
     long_description_content_type="text/markdown",
+    author="Serhat Çelik",
+    author_email="prjctsrht@gmail.com",
+    url="https://github.com/serhatcelik/harpy",
+    download_url="https://github.com/serhatcelik/harpy/releases/latest",
     packages=setuptools.find_packages(),
     classifiers=[
         "Environment :: Console",
@@ -25,7 +24,9 @@ setuptools.setup(
         "Natural Language :: English",
         "Operating System :: POSIX",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
@@ -35,24 +36,26 @@ setuptools.setup(
         "Topic :: System :: Networking",
         "Topic :: System :: Networking :: Monitoring",
     ],
-    license="MIT",
-    platforms=["Linux"],
-    python_requires="~=3.4",
-    keywords=["harpy", "arp", "discovery"],
-    zip_safe=False,
-    package_data={
-        "": [
-            "*.conf", "*.json",
-        ],
-    },
     options={
         "build_scripts": {
             "executable": "/bin/custom_python",
         },
     },
+    license="MIT",
+    keywords=["harpy", "arp", "discovery"],
+    platforms=["Linux"],
+    package_data={
+        "": ["*.conf", "*.json"],
+    },
+    zip_safe=False,
     entry_points={
         "console_scripts": [
             "harpy = harpy.__main__:setup_py_main",
         ],
+    },
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, <4",
+    project_urls={
+        "Source Code": "https://github.com/serhatcelik/harpy",
+        "Bug Tracker": "https://github.com/serhatcelik/harpy/issues",
     },
 )

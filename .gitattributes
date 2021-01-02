@@ -1,5 +1,4 @@
 *.md text eol=lf
 *.py text eol=lf
-*.txt text eol=lf
 *.conf text eol=lf
 *.json text eol=lf
