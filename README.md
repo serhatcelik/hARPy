@@ -38,7 +38,7 @@ Sends ARP (Address Resolution Protocol) requests (active mode only) for discover
     - Ubuntu
         - 20.04.1 LTS
 
-## Preparation & Installation
+## Preparation and Installation
 
 > For Python version 3 (recommended)
 
