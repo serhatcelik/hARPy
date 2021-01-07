@@ -71,7 +71,7 @@ class ArgumentHandler(object):
     @ExceptionHandler()
     def interface_handler(interface):
         if interface is False:
-            print("No available carrier in %s" % data.SYS_PATH)
+            print("No available interface in %s" % data.SYS_PATH)
             sys.stdout.flush()
             return False
         if interface == "lo":
