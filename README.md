@@ -63,7 +63,7 @@ If you want to use the program by downloading directly from GitHub without insta
 ```
 # git clone https://github.com/serhatcelik/harpy.git
 # cd harpy
-# python3 -m harpy --help
+# python -m harpy --help
 ```
 
 ## Usage
