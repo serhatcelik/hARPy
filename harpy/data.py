@@ -119,6 +119,7 @@ MAX_SLP = 1000
 #################
 SEPARATOR = " | "
 CONT_STP_SIZ = 7  # Step size for the iterable sniff results container
+CONT_MAX_SIZ = ((256 ** 3) - 2 - 1) * CONT_STP_SIZ  # (/8 - (.0 + .255) - you)
 ETHER_TO_ARP = False  # Ethernet MAC <-> ARP MAC
 MAX_IP_LEN = 15
 MAX_MAC_LEN = 18
@@ -242,8 +243,10 @@ def run_main(run, timed_out=False):
     :param timed_out: True if timed out False otherwise.
     """
 
-    if (not run) or timed_out:
+    if (not run) or timed_out or (len(RESULT_ALL) > CONT_MAX_SIZ):
         if timed_out:
             EXIT_MSGS.add("Exiting, timed out")
+        elif len(RESULT_ALL) > CONT_MAX_SIZ:
+            EXIT_MSGS.add("Exiting, no space left in the container")
 
         globals()["RUN_MAIN"] = False
