@@ -2,6 +2,11 @@
 # History of the hARPy #
 ########################
 
+hARPy v2021.1.9
+---------------
+- Fixed a memory error that occurred when the sniff results container was full.
+- Exit codes have been made more meaningful.
+
 hARPy v2021.1.2
 ---------------
 - Fixed an error where an unavailable interface could be selected.
