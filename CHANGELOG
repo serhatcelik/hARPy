@@ -4,7 +4,7 @@
 
 hARPy v2021.1.12
 ----------------
-- Fixed an error where unknown MAC addresses could not be determined as "unknown"
+- Fixed an error where unknown MAC addresses could not be determined as "unknown".
 
 
 hARPy v2021.1.9
