@@ -419,6 +419,7 @@ class ResultHandler(object):
                 # Prevent the "ordinal not in range(128)" error in 2.7
                 # Also prevent for incorrect measurement of text length
                 return self.ouis[mac[:6]].encode("ascii", "ignore").decode()
+            return "unknown"
         return ""
 
 
