@@ -19,7 +19,7 @@ import threading
 import subprocess
 from harpy import __version__
 from harpy import data
-from harpy.data import logo, banner, add_colons, add_dots, run_main
+from harpy.data import get_logo, get_banner, add_colons, add_dots, run_main
 
 
 class ExceptionHandler(object):
@@ -33,6 +33,7 @@ class ExceptionHandler(object):
             except (IOError, OSError, socket.error, termios.error) as err:
                 # 5: Input/output error
                 if err.args[0] == 5:
+                    # Mostly for "print" errors
                     pass
                 elif err.args[0] in (6, 9, 19, 100):
                     # 6: No such device or address
@@ -63,13 +64,13 @@ class ArgumentHandler(object):
         pass
 
     @staticmethod
-    def count_handler(count):
+    def handle_count(count):
         if count < data.MIN_CNT:
             data.CNT = data.MIN_CNT
 
     @staticmethod
     @ExceptionHandler()
-    def interface_handler(interface):
+    def handle_interface(interface):
         if interface is False:
             print("No available interface in %s" % data.SYS_PATH)
             sys.stdout.flush()
@@ -89,26 +90,26 @@ class ArgumentHandler(object):
         return True
 
     @staticmethod
-    def log_handler():
+    def handle_log():
         if os.path.isfile(data.LOG_FILE):
             with open(data.LOG_FILE, "r") as log:
                 return log.read()
         return "No log"
 
     @staticmethod
-    def node_handler(node):
+    def handle_node(node):
         if not data.MIN_NOD <= node <= data.MAX_NOD:
             data.NOD = data.DEF_NOD
 
     @staticmethod
-    def passive_handler(passive):
+    def handle_passive(passive):
         if passive:
             # Fast mode only makes sense in active mode, so...
             data.FST = None
 
     @staticmethod
     @ExceptionHandler()
-    def range_handler(range_):
+    def handle_range(range_):
         if range_ is None:
             # Filtering is only allowed if a scanning range is specified, so...
             data.FLT = None
@@ -151,14 +152,14 @@ class ArgumentHandler(object):
         return True
 
     @staticmethod
-    def sleep_handler(sleep):
+    def handle_sleep(sleep):
         if sleep < data.MIN_SLP:
             data.SLP = data.MIN_SLP
         elif sleep > data.MAX_SLP:
             data.SLP = data.MAX_SLP
 
     @staticmethod
-    def timeout_handler(timeout):
+    def handle_timeout(timeout):
         if timeout < data.MIN_TIM:
             data.TIM = data.MIN_TIM
 
@@ -291,7 +292,7 @@ class ParserHandler(object):
         )
         parser.add_argument(
             "-l", "--log", action="version",
-            version=ArgumentHandler.log_handler(), help="show log and exit",
+            version=ArgumentHandler.handle_log(), help="show log and exit",
         )
         parser.add_argument(
             "-L", "--license", version=inspect.cleandoc(data.__doc__),
@@ -354,13 +355,13 @@ class ParserHandler(object):
     @staticmethod
     def check_arguments():
         return [
-            ArgumentHandler.count_handler(data.CNT),
-            ArgumentHandler.interface_handler(data.INT),
-            ArgumentHandler.node_handler(data.NOD),
-            ArgumentHandler.passive_handler(data.PAS),
-            ArgumentHandler.range_handler(data.RNG),
-            ArgumentHandler.sleep_handler(data.SLP),
-            ArgumentHandler.timeout_handler(data.TIM),
+            ArgumentHandler.handle_count(data.CNT),
+            ArgumentHandler.handle_interface(data.INT),
+            ArgumentHandler.handle_node(data.NOD),
+            ArgumentHandler.handle_passive(data.PAS),
+            ArgumentHandler.handle_range(data.RNG),
+            ArgumentHandler.handle_sleep(data.SLP),
+            ArgumentHandler.handle_timeout(data.TIM),
         ]
 
 
@@ -371,7 +372,7 @@ class ResultHandler(object):
     arp_opc = None
 
     def __init__(self):
-        self.ouis = self.with_ouis()  # Get OUI database
+        self.ouis = self.open_ouis()  # Get OUI database
 
     def __call__(self, results):
         for _ in range(0, len(results), data.CONT_STP_SIZ):
@@ -395,7 +396,7 @@ class ResultHandler(object):
         return results
 
     @staticmethod
-    def with_ouis():
+    def open_ouis():
         """Obtains the contents of the file that contains OUIs."""
 
         ouis_file = os.path.join(os.path.dirname(__file__), "ouis.json")
@@ -476,14 +477,14 @@ class SocketHandler(object):
 
 
 class WindowHandler(object):
-    logo = logo()
+    logo = get_logo()
 
     def __init__(self, results):
         self.results = results
 
         self.col_length = self.get_column_length()
 
-        self.banner = banner()
+        self.banner = get_banner()
         self.banner_results = [
             len(list(_ for _ in range(0, len(results), data.CONT_STP_SIZ))),
             sum(results[_] for _ in range(3, len(results), data.CONT_STP_SIZ)),
@@ -577,7 +578,7 @@ class WindowHandler(object):
         # Rows #
         ########
         if data.TGT_IP is None:
-            info_col = ""
+            info_col = "Sending disabled"
         elif data.TGT_IP is False:
             info_col = "Sending finished"
         else:

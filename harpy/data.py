@@ -160,7 +160,7 @@ TGT_IP = None  # Target IP address
 #############
 # Functions #
 #############
-def logo():
+def get_logo():
     return [
         r"|_  _  _ _   ",
         r"| |(_|| |_)\/",
@@ -168,7 +168,7 @@ def logo():
     ]
 
 
-def banner():
+def get_banner():
     return [
         ("Fast   : %s" % FST).ljust(MAX_MAC_LEN) + SEPARATOR + "Hosts   : ",
         ("Filter : %s" % FLT).ljust(MAX_MAC_LEN) + SEPARATOR + "Replies : ",
@@ -215,7 +215,7 @@ def check_ip(ip_addr, range_):
     return any([ip_addr.split(".")[:i[_[-1]]] == _[:i[_[-1]]] for _ in range_])
 
 
-def first_last(range_):
+def get_first_last(range_):
     """
     Determines the first/last IP address using the given scanning range.
 

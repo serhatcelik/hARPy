@@ -3,4 +3,4 @@
 # Released under the MIT license
 # Copyright (c) Serhat Çelik
 
-VERSION = "2021.1.12"
+VERSION = "2021.1.13"

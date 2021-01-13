@@ -8,7 +8,7 @@ import struct
 import binascii
 import threading
 from harpy import data
-from harpy.data import check_ip, first_last
+from harpy.data import check_ip, get_first_last
 from harpy.handlers import ExceptionHandler, PacketHandler
 
 
@@ -36,7 +36,7 @@ class SendThread(threading.Thread):
 
     @ExceptionHandler(data.SEND)
     def send(self, range_):
-        first_ip, last_ip = first_last(range_)
+        first_ip, last_ip = get_first_last(range_)
 
         start = struct.unpack("!I", socket.inet_aton(first_ip))[0]
         stop = struct.unpack("!I", socket.inet_aton(last_ip))[0]

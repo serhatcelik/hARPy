@@ -21,51 +21,18 @@ from harpy.handlers import (ExceptionHandler, EchoHandler, InterfaceHandler,
                             SocketHandler, WindowHandler)
 
 
-@ExceptionHandler()
-def terminator():
-    """Terminates all threads and closes the socket."""
-
-    data.CATCH_SIGNALS = list()  # No more catch
-    data.IGNORE_SIGNALS = data.CATCHABLE_SIGNALS  # Update to ignore all
-    # Disable the handler to prevent activating it again
-    getattr(main, data.SIGNAL, SignalHandler()).ignore(*data.IGNORE_SIGNALS)
-
-    # Join first to prevent the "Set changed size during iteration" error
-    for _ in getattr(main, "threads", list()):
-        vars(main)[_].flag.set()  # Tell the thread to terminate itself
-        vars(main)[_].join()
-
-    if hasattr(main, data.SOCKET):
-        vars(main)[data.SOCKET].close()  # Close the socket
-
-    print("\n")
-    for _ in data.EXIT_MSGS:
-        print(_)
-    sys.stdout.flush()
-    sys.exit(1)
-
-
-def hard_terminator(*args):
-    """
-    Logs the exception and terminates all threads the hard way.
-
-    :param args: Container that stores type, value and traceback.
-    """
-
-    log_conf_file = os.path.join(os.path.dirname(__file__), "logging.conf")
-    logging.config.fileConfig(log_conf_file)
-    logger = logging.getLogger("harpy")
-    logger.error("%s\n", traceback.format_exception(args[0], args[1], args[2]))
-
-    # atexit.register will not work when os._exit is called, so...
-    getattr(main, data.ECHO, EchoHandler()).enable()
-    if hasattr(main, data.SOCKET):
-        vars(main)[data.SOCKET].close()
-    vars(os)["_exit"](34)  # Force to exit with code 34
+def setup_py_main():
+    if sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty():
+        if os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
+            if os.geteuid() == 0:
+                main()
+                terminate()
+            else:
+                sys.exit("Run me as superuser (a.k.a. root)")
 
 
 def main():
-    sys.excepthook = hard_terminator
+    sys.excepthook = terminate_hard
 
     setattr(main, data.SIGNAL, SignalHandler())
     vars(main)[data.SIGNAL].catch(*data.CATCH_SIGNALS)
@@ -130,14 +97,47 @@ def main():
                 data.RESULT_ALL = vars(main)[data.RESULT](data.RESULT_ALL)
 
 
-def setup_py_main():
-    if sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty():
-        if os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
-            if os.geteuid() == 0:
-                main()
-                terminator()
-            else:
-                sys.exit("Run me as superuser (a.k.a. root)")
+@ExceptionHandler()
+def terminate():
+    """Terminates all threads and closes the socket."""
+
+    data.CATCH_SIGNALS = list()  # No more catch
+    data.IGNORE_SIGNALS = data.CATCHABLE_SIGNALS  # Update to ignore all
+    # Disable the handler to prevent activating it again
+    getattr(main, data.SIGNAL, SignalHandler()).ignore(*data.IGNORE_SIGNALS)
+
+    # Join first to prevent the "Set changed size during iteration" error
+    for _ in getattr(main, "threads", list()):
+        vars(main)[_].flag.set()  # Tell the thread to terminate itself
+        vars(main)[_].join()
+
+    if hasattr(main, data.SOCKET):
+        vars(main)[data.SOCKET].close()  # Close the socket
+
+    print("\n")
+    for _ in data.EXIT_MSGS:
+        print(_)
+    sys.stdout.flush()
+    sys.exit(1)
+
+
+def terminate_hard(*args):
+    """
+    Logs the exception and terminates all threads the hard way.
+
+    :param args: Container that stores type, value and traceback.
+    """
+
+    log_conf_file = os.path.join(os.path.dirname(__file__), "logging.conf")
+    logging.config.fileConfig(log_conf_file)
+    logger = logging.getLogger("harpy")
+    logger.error("%s\n", traceback.format_exception(args[0], args[1], args[2]))
+
+    # atexit.register will not work when os._exit is called, so...
+    getattr(main, data.ECHO, EchoHandler()).enable()
+    if hasattr(main, data.SOCKET):
+        vars(main)[data.SOCKET].close()
+    vars(os)["_exit"](34)  # Force to exit with code 34
 
 
 if __name__ == "__main__":
