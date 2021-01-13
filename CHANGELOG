@@ -2,6 +2,11 @@
 # History of the hARPy #
 ########################
 
+hARPy v2021.1.13
+----------------
+- The UI has been improved.
+
+
 hARPy v2021.1.12
 ----------------
 - Fixed an error where unknown MAC addresses could not be determined as "unknown".
