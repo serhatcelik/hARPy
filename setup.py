@@ -7,12 +7,11 @@ with open("README.md", "r") as readme:
 
 setuptools.setup(
     name="harpy-prjct",
-    version=__import__("harpy.__version__", fromlist="__version__").VERSION,
+    version=__import__("harpy.__license__", fromlist="__license__").VERSION,
     description="Active/passive ARP discovery tool",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Serhat Çelik",
-    author_email="prjctsrht@gmail.com",
     url="https://github.com/serhatcelik/harpy",
     download_url="https://github.com/serhatcelik/harpy/releases/latest",
     packages=setuptools.find_packages(),

@@ -58,7 +58,7 @@ Sends ARP (Address Resolution Protocol) requests (active mode only) for discover
 # pip2 install --upgrade harpy-prjct
 ```
 
-If you want to use the program by downloading directly from GitHub without installing it from PyPI, do the following:
+Note: If you want to use the program by downloading directly from GitHub without installing it from PyPI, do the following:
 
 ```
 # git clone https://github.com/serhatcelik/harpy.git
@@ -73,11 +73,11 @@ If you want to use the program by downloading directly from GitHub without insta
 ```
 
 ```
-usage: harpy [-h] [-c count] [-f] [-F] [-i interface] [-l] [-L] [-n node] [-p]
+usage: harpy [-h] [-c count] [-f] [-F] [-i interface] [-L] [-l] [-n node] [-p]
              [-r range [range ...]] [-R] [-s time] [-t timeout] [-v]
 
 hARPy - Active/passive ARP discovery tool
-Written by Serhat Çelik <prjctsrht@gmail.com>
+Written by Serhat Çelik (with the help of my family and a friend)
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -85,8 +85,8 @@ optional arguments:
   -f, --fast            enable fast mode, only scan for specific hosts
   -F, --filter          filter the sniff results using the given scanning range
   -i interface          network device to send/sniff packets
-  -l, --log             show log and exit
   -L, --license         show license and exit
+  -l, --log             show log and exit
   -n node               last ip octet to be used to send packets (def:43|min:2|max:253)
   -p, --passive         enable passive mode, do not send any packets
   -r range [range ...]  scanning range
@@ -127,8 +127,8 @@ See https://github.com/serhatcelik/harpy for more information.
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
+[MIT License](https://choosealicense.com/licenses/mit/)
 
 ## Feedback
 
-If you have found a bug or have a suggestion, please consider mailing me at <prjctsrht@gmail.com>
+If you have found a bug or have a suggestion, please consider creating an issue.
