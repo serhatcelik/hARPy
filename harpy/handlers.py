@@ -1,7 +1,8 @@
 # coding=utf-8
+
 # This file is part of harpy
 # Released under the MIT license
-# Copyright (c) Serhat Çelik
+# Copyright (C) Serhat Çelik
 
 from __future__ import print_function
 import os
@@ -11,14 +12,12 @@ import json
 import signal
 import socket
 import struct
-import inspect
 import termios
 import argparse
 import binascii
 import threading
 import subprocess
-from harpy import __version__
-from harpy import data
+from harpy import __license__, data
 from harpy.data import get_logo, get_banner, add_colons, add_dots, run_main
 
 
@@ -44,7 +43,7 @@ class ExceptionHandler(object):
                 else:
                     raise
 
-            run_main(False)
+            return run_main(False)
 
         return wrapper
 
@@ -56,7 +55,7 @@ class ExceptionHandler(object):
         :param error: Error content.
         """
 
-        data.EXIT_MSGS.add("%s -- [Errno %d] %s" % (self.who, errnum, error))
+        data.EXIT_MSGS.add("%s > [Errno %d] %s" % (self.who, errnum, error))
 
 
 class ArgumentHandler(object):
@@ -76,15 +75,15 @@ class ArgumentHandler(object):
             sys.stdout.flush()
             return False
         if interface == "lo":
-            print("This is not an Ethernet interface -- %s" % interface)
+            print("This is not an Ethernet interface | %s" % interface)
             sys.stdout.flush()
             return False
         if interface not in InterfaceHandler().members:
-            print("No such interface -- %s" % interface)
+            print("No such interface | %s" % interface)
             sys.stdout.flush()
             return False
         if InterfaceHandler().members[interface] != "up":
-            print("Interface is not available (dormant?) -- %s" % interface)
+            print("Interface is not available (dormant?) | %s" % interface)
             sys.stdout.flush()
             return False
         return True
@@ -120,7 +119,7 @@ class ArgumentHandler(object):
         # Do this only if the scanning range is different from the default
         if range_ != data.DEF_RNG:
             octet = "([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"
-            expression = r"^({0}\.{0}\.{0}\.{0}/(8|16|24))$".format(octet)
+            pattern = r"^({0}\.{0}\.{0}\.{0}/(8|16|24))$".format(octet)
 
             set_range_ = list()
             # Remove repetitive scanning ranges
@@ -129,15 +128,15 @@ class ArgumentHandler(object):
                     set_range_.append(_)
             range_ = set_range_
 
-            problem = [_ for _ in range_ if not bool(re.search(expression, _))]
+            problem = [_ for _ in range_ if not bool(re.search(pattern, _))]
             if problem:
-                print("Problem with scanning range/s --", end=" ")
+                print("Problem with scanning range(s)", end=data.SEPARATOR)
                 for i, _ in enumerate(problem):
                     # Last error?
                     if i == len(problem) - 1:
                         print(_)
                     else:
-                        print(_, end=" ")
+                        print(_, end=data.SEPARATOR)
                 sys.stdout.flush()
                 return False
 
@@ -265,7 +264,8 @@ class ParserHandler(object):
         parser = argparse.ArgumentParser(
             prog="harpy",
             description="hARPy - Active/passive ARP discovery tool\n"
-                        "Written by Serhat Çelik <prjctsrht@gmail.com>",
+                        "Written by Serhat Çelik "
+                        "(with the help of my family and a friend)",
             epilog="It is recommended that you enable passive mode on "
                    "networks with heavy packet flow.\n"
                    "See https://github.com/serhatcelik/harpy "
@@ -291,12 +291,12 @@ class ParserHandler(object):
             help="network device to send/sniff packets",
         )
         parser.add_argument(
-            "-l", "--log", action="version",
-            version=ArgumentHandler.handle_log(), help="show log and exit",
+            "-L", "--license", version=__license__.__doc__,
+            action="version", help="show license and exit",
         )
         parser.add_argument(
-            "-L", "--license", version=inspect.cleandoc(data.__doc__),
-            action="version", help="show license and exit",
+            "-l", "--log", action="version",
+            version=ArgumentHandler.handle_log(), help="show log and exit",
         )
         parser.add_argument(
             "-n", default=data.DEF_NOD, type=int, metavar="node", dest="n",
@@ -327,7 +327,7 @@ class ParserHandler(object):
                  "(def:%%(default)s|min:%d)" % data.MIN_TIM,
         )
         parser.add_argument(
-            "-v", "--version", version="v" + __version__.VERSION,
+            "-v", "--version", version="v" + __license__.VERSION,
             action="version", help="show program version and exit",
         )
 
@@ -354,7 +354,7 @@ class ParserHandler(object):
 
     @staticmethod
     def check_arguments():
-        return [
+        return False not in [
             ArgumentHandler.handle_count(data.CNT),
             ArgumentHandler.handle_interface(data.INT),
             ArgumentHandler.handle_node(data.NOD),
@@ -539,7 +539,7 @@ class WindowHandler(object):
 
     @ExceptionHandler()
     def draw_a_line(self):
-        print(self.col_length * "-")
+        print("-" * self.col_length)
         sys.stdout.flush()
 
     @staticmethod
@@ -565,7 +565,7 @@ class WindowHandler(object):
         # Logo & Banner #
         #################
         for i, j in zip(self.logo, self.banner):
-            print(i + ((data.MAX_IP_LEN - len(i)) * " "), end=data.SEPARATOR)
+            print(i + (" " * (data.MAX_IP_LEN - len(i))), end=data.SEPARATOR)
             print(j)
         sys.stdout.flush()
 

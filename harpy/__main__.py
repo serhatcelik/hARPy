@@ -1,7 +1,8 @@
 # coding=utf-8
+
 # This file is part of harpy
 # Released under the MIT license
-# Copyright (c) Serhat Çelik
+# Copyright (C) Serhat Çelik
 
 """hARPy -who uses ARP-: Active/passive ARP discovery tool."""
 
@@ -29,6 +30,10 @@ def setup_py_main():
                 terminate()
             else:
                 sys.exit("Run me as superuser (a.k.a. root)")
+        else:
+            sys.exit(1)
+    else:
+        sys.exit(1)
 
 
 def main():
@@ -46,7 +51,7 @@ def main():
     commands = vars(main)[data.PARSER].create_arguments()
     vars(main)[data.PARSER].create_links(commands)
 
-    if False in vars(main)[data.PARSER].check_arguments():
+    if not vars(main)[data.PARSER].check_arguments():
         sys.exit(1)
 
     setattr(main, data.SOCKET, SocketHandler(data.SOC_PRO))
@@ -103,7 +108,7 @@ def terminate():
 
     data.CATCH_SIGNALS = list()  # No more catch
     data.IGNORE_SIGNALS = data.CATCHABLE_SIGNALS  # Update to ignore all
-    # Disable the handler to prevent activating it again
+    # Disable the signal handler (__call__) to prevent activating it again
     getattr(main, data.SIGNAL, SignalHandler()).ignore(*data.IGNORE_SIGNALS)
 
     # Join first to prevent the "Set changed size during iteration" error
@@ -137,7 +142,7 @@ def terminate_hard(*args):
     getattr(main, data.ECHO, EchoHandler()).enable()
     if hasattr(main, data.SOCKET):
         vars(main)[data.SOCKET].close()
-    vars(os)["_exit"](34)  # Force to exit with code 34
+    vars(os)["_exit"](34)  # Force exiting with code 34
 
 
 if __name__ == "__main__":

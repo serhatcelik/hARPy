@@ -1,31 +1,9 @@
 # coding=utf-8
+
 # This file is part of harpy
 # Released under the MIT license
-# Copyright (c) Serhat Çelik
+# Copyright (C) Serhat Çelik
 
-"""
-MIT License
-
-Copyright (c) 2021 Serhat Çelik
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
 
 ################
 # Over Control #
@@ -106,12 +84,12 @@ DEF_TIM = float("inf")  # In seconds
 
 # Minimums
 MIN_CNT = 1
-MIN_NOD = 2
+MIN_NOD = 2  # 0 for network
 MIN_SLP = 2
 MIN_TIM = 10
 
 # Maximums
-MAX_NOD = 253
+MAX_NOD = 253  # 255 for broadcast
 MAX_SLP = 1000
 
 #################
@@ -119,7 +97,7 @@ MAX_SLP = 1000
 #################
 SEPARATOR = " | "
 CONT_STP_SIZ = 7  # Step size for the iterable sniff results container
-CONT_MAX_SIZ = ((256 ** 3) - 2 - 1) * CONT_STP_SIZ  # (/8 - (.0 + .255) - you)
+CONT_MAX_SIZ = ((256 ** 3) - 2 - 1) * CONT_STP_SIZ  # (/8 - [.0 + .255] - you)
 ETHER_TO_ARP = False  # Ethernet MAC <-> ARP MAC
 MAX_IP_LEN = 15
 MAX_MAC_LEN = 18
@@ -140,7 +118,7 @@ SOC_PRO = 3  # GGP ( https://www.iana.org/assignments/protocol-numbers )
 # Ethernet Frame #
 ##################
 SRC_MAC = None  # Source MAC address
-DST_MAC = 6 * "ff"  # Destination MAC address: Broadcast
+DST_MAC = "ff" * 6  # Destination MAC address: Broadcast
 ETH_TYP = "0806"  # EtherType: ARP
 
 ##############
@@ -153,7 +131,7 @@ ARP_PRS = "04"  # Protocol size: 4 bytes
 ARP_REQ = "0001"  # Opcode: Request
 SND_MAC = None  # Sender MAC address
 SND_IP = None  # Sender IP address
-TGT_MAC = 6 * "ff"  # Target MAC address: Broadcast
+TGT_MAC = "ff" * 6  # Target MAC address: Broadcast
 TGT_IP = None  # Target IP address
 
 
@@ -212,7 +190,7 @@ def check_ip(ip_addr, range_):
 
     i = {"24": 3, "16": 2, "8": 1}  # Scanning range slicing indexes by prefix
 
-    return any([ip_addr.split(".")[:i[_[-1]]] == _[:i[_[-1]]] for _ in range_])
+    return any(ip_addr.split(".")[:i[_[-1]]] == _[:i[_[-1]]] for _ in range_)
 
 
 def get_first_last(range_):

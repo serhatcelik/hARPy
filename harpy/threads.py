@@ -1,7 +1,8 @@
 # coding=utf-8
+
 # This file is part of harpy
 # Released under the MIT license
-# Copyright (c) Serhat Çelik
+# Copyright (C) Serhat Çelik
 
 import socket
 import struct
@@ -14,9 +15,9 @@ from harpy.handlers import ExceptionHandler, PacketHandler
 
 class SendThread(threading.Thread):
     def __init__(self, l2soc):
-        self.l2soc = l2soc
-
         super(SendThread, self).__init__()
+
+        self.l2soc = l2soc
         self.flag = threading.Event()
 
     def run(self):
@@ -80,9 +81,9 @@ class SniffThread(threading.Thread):
     packet = None
 
     def __init__(self, l2soc):
-        self.l2soc = l2soc
-
         super(SniffThread, self).__init__()
+
+        self.l2soc = l2soc
         self.flag = threading.Event()
 
     @ExceptionHandler(data.SNIFF)
