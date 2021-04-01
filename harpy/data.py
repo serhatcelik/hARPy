@@ -188,7 +188,7 @@ def check_ip(ip_addr, range_):
     :param range_: Scanning range.
     """
 
-    i = {"24": 3, "16": 2, "8": 1}  # Scanning range slicing indexes by prefix
+    i = {"24": 3, "16": 2, "8": 1}  # Range slicing indexes by prefix length
 
     return any(ip_addr.split(".")[:i[_[-1]]] == _[:i[_[-1]]] for _ in range_)
 
