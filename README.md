@@ -8,9 +8,6 @@ Sends ARP (Address Resolution Protocol) requests (active mode only) for discover
 
 ## Features
 
-- Supports...
-    - ...Python version 3 (3.4, 3.5, 3.6, 3.7, 3.8, 3.9),
-    - ...Python version 2 (2.7).
 - Ability to...
     - ...detect suspicious packets during scanning,
     - ...scan active (normal or fast) or passive,
@@ -24,23 +21,20 @@ Sends ARP (Address Resolution Protocol) requests (active mode only) for discover
 
 ## Tested OSs
 
-- GNU/Linux
-    - Kali Linux
-        - 2020.4
-        - 2020.3
-    - Linux Mint
-        - 20 "Ulyana"
-    - openSUSE
-        - Leap
-            - 15.2
-    - Pardus
-        - 19.4
-    - Ubuntu
-        - 20.04.1 LTS
+- Kali Linux 2020.4
+- Kali Linux 2020.3
+- Linux Mint 20 "Ulyana"
+- openSUSE Leap 15.2
+- Pardus 19.4
+- Ubuntu 20.04.1 LTS
+
+## Requirements
+
+- Python 2.7 or ~=3.4 (recommended)
 
 ## Preparation and Installation
 
-> For Python version 3 (recommended)
+> For Python version 3
 
 ```
 # pip3 install --upgrade pip
