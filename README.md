@@ -51,7 +51,7 @@ Sends ARP (Address Resolution Protocol) requests (active mode only) for discover
 > For Python version 2
 
 ```
-# curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+# curl https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py
 # python2 get-pip.py
 # pip2 install --upgrade pip
 # pip2 install --upgrade setuptools
@@ -101,27 +101,17 @@ See https://github.com/serhatcelik/harpy for more information.
 
 ## Examples
 
-> Active scanning for common IP addresses in fast mode
-
 ```
+Active scanning for common IP addresses in fast mode
 # harpy -f
-```
 
-> Passive scanning on eth0
-
-```
+Passive scanning on eth0
 # harpy -i eth0 -p
-```
 
-> Scan a fixed range with a count value of 2
-
-```
+Scan a fixed range with a count value of 2
 # harpy -r 192.168.0.1/24 -c 2
-```
 
-> Scan some fixed ranges with filtering
-
-```
+Scan some fixed ranges with filtering
 # harpy -r 172.16.0.1/16 10.0.0.1/8 -F
 ```
 
