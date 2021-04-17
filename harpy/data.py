@@ -1,6 +1,6 @@
 # coding=utf-8
 
-# This file is part of harpy
+# This file is part of hARPy
 # Released under the MIT license
 # Copyright (C) Serhat Çelik
 
@@ -31,15 +31,15 @@ LOG_FILE = "/var/log/harpy.log"
 # Signals #
 ###########
 # Signals to be caught
-HUP = 1  # Hangup detected on controlling terminal
+HUP = 1  # SIGHUP: Hangup detected on controlling terminal
 
 # Signals to be ignored
-CHLD = 17  # Child stopped or terminated
-WINCH = 28  # Window resize signal (4.3BSD, Sun)
+CHLD = 17  # SIGCHLD: Child stopped or terminated
+WINCH = 28  # SIGWINCH: Window resize signal (4.3BSD, Sun)
 
 # Signals that cannot be caught or ignored
-KILL = 9  # Kill signal
-STOP = 19  # Stop process
+KILL = 9  # SIGKILL: Kill signal
+STOP = 19  # SIGSTOP: Stop process
 
 CATCHABLE_SIGNALS = [_ for _ in range(1, 65) if _ not in [KILL, STOP, 32, 33]]
 CATCH_SIGNALS = [_ for _ in CATCHABLE_SIGNALS if _ not in [CHLD, WINCH]]
@@ -111,7 +111,7 @@ MAX_ALL_LEN = sum(ALL_COLUMNS) + (len(ALL_COLUMNS) * len(SEPARATOR))
 ######################
 MIN_BUF = 42  # Minimum buffer size in bytes (14 for Ethernet, 28 for ARP)
 SOC_BUF = 42  # Buffer size in bytes
-SOC_POR = 0  # Port to bind to an interface
+SOC_POR = 0  # Port to bind to an interface (0 for automatic)
 SOC_PRO = 3  # GGP ( https://www.iana.org/assignments/protocol-numbers )
 
 ##################
@@ -225,6 +225,6 @@ def run_main(run, timed_out=False):
         if timed_out:
             EXIT_MSGS.add("Exiting, timed out")
         elif len(RESULT_ALL) > CONT_MAX_SIZ:
-            EXIT_MSGS.add("Exiting, no space left in the container")
+            EXIT_MSGS.add("Exiting, no space left in the results container")
 
         globals()["RUN_MAIN"] = False

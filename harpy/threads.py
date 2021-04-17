@@ -1,6 +1,6 @@
 # coding=utf-8
 
-# This file is part of harpy
+# This file is part of hARPy
 # Released under the MIT license
 # Copyright (C) Serhat Çelik
 

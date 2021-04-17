@@ -1,6 +1,6 @@
 # coding=utf-8
 
-# This file is part of harpy
+# This file is part of hARPy
 # Released under the MIT license
 # Copyright (C) Serhat Çelik
 
@@ -55,7 +55,7 @@ class ExceptionHandler(object):
         :param error: Error content.
         """
 
-        data.EXIT_MSGS.add("%s > [Errno %d] %s" % (self.who, errnum, error))
+        data.EXIT_MSGS.add("%s -> [Errno %d] %s" % (self.who, errnum, error))
 
 
 class ArgumentHandler(object):
@@ -75,15 +75,15 @@ class ArgumentHandler(object):
             sys.stdout.flush()
             return False
         if interface == "lo":
-            print("This is not an Ethernet interface | %s" % interface)
+            print("'%s': This is not an Ethernet interface" % interface)
             sys.stdout.flush()
             return False
         if interface not in InterfaceHandler().members:
-            print("No such interface | %s" % interface)
+            print("'%s': No such interface" % interface)
             sys.stdout.flush()
             return False
         if InterfaceHandler().members[interface] != "up":
-            print("Interface is not available (dormant?) | %s" % interface)
+            print("'%s': Interface is not available (dormant?)" % interface)
             sys.stdout.flush()
             return False
         return True
@@ -130,7 +130,7 @@ class ArgumentHandler(object):
 
             problem = [_ for _ in range_ if not bool(re.search(pattern, _))]
             if problem:
-                print("Problem with scanning range(s)", end=data.SEPARATOR)
+                print("Problem with scanning range(s)", end=" -> ")
                 for i, _ in enumerate(problem):
                     # Last error?
                     if i == len(problem) - 1:
@@ -372,7 +372,7 @@ class ResultHandler(object):
     arp_opc = None
 
     def __init__(self):
-        self.ouis = self.open_ouis()  # Get OUI database
+        self.ouis = self.open_ouis()  # Get OUIs database
 
     def __call__(self, results):
         for _ in range(0, len(results), data.CONT_STP_SIZ):
@@ -546,7 +546,7 @@ class WindowHandler(object):
     @ExceptionHandler()
     def draw_a_row(*args):
         """
-        Draw a row for the result window.
+        Draws a row for the result window.
 
         :param args: Container that stores column texts.
         """
