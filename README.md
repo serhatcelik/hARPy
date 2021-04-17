@@ -19,6 +19,10 @@ Sends ARP (Address Resolution Protocol) requests (active mode only) for discover
     - ...the amount of ARP requests to be sent,
     - ...the sleep time between each ARP request.
 
+## OS Support
+
+- GNU/Linux
+
 ## Tested OSs
 
 - Kali Linux 2020.4
@@ -37,9 +41,9 @@ Sends ARP (Address Resolution Protocol) requests (active mode only) for discover
 > For Python version 3
 
 ```
-# pip3 install --upgrade pip
-# pip3 install --upgrade setuptools
-# pip3 install --upgrade harpy-prjct
+# python3 -m pip install --upgrade pip
+# python3 -m pip install --upgrade setuptools
+# python3 -m pip install --upgrade harpy-prjct
 ```
 
 > For Python version 2
@@ -47,9 +51,9 @@ Sends ARP (Address Resolution Protocol) requests (active mode only) for discover
 ```
 # curl https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py
 # python2 get-pip.py
-# pip2 install --upgrade pip
-# pip2 install --upgrade setuptools
-# pip2 install --upgrade harpy-prjct
+# python2 -m pip install --upgrade pip
+# python2 -m pip install --upgrade setuptools
+# python2 -m pip install --upgrade harpy-prjct
 ```
 
 Note: If you want to use the program by downloading directly from GitHub without installing it from PyPI, do the following:
